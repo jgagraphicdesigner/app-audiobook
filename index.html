@@ -339,41 +339,17 @@ footer{background:var(--purple-mid);border-top:1px solid var(--border);padding:2
     </div>
   </div>
 
-  <!-- Install App Banner -->
-  <div id="offline-banner" style="display:none;background:linear-gradient(135deg,#2a1a3a,#1e1030);border:1px solid var(--border);border-radius:var(--radius);padding:1.2rem 1.4rem;margin-bottom:1.4rem">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:0.8rem">
+  <!-- Offline / Install Banner -->
+  <div id="offline-banner" style="display:none;background:linear-gradient(135deg,#1a2a1a,#162414);border:1px solid #2a4a2a;border-radius:var(--radius);padding:1rem 1.4rem;margin-bottom:1.4rem">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.8rem">
       <div style="display:flex;align-items:center;gap:0.9rem">
-        <img src="./icons/icon-192.png" alt="App icon" style="width:48px;height:48px;border-radius:12px;flex-shrink:0">
+        <span style="font-size:1.4rem">📶</span>
         <div>
-          <div style="font-size:0.92rem;font-weight:700;color:var(--white)">Install Positively Geared</div>
-          <div style="font-size:0.76rem;color:var(--text-muted)">Listen offline · No app store needed</div>
+          <div style="font-size:0.88rem;font-weight:700;color:var(--white)">Listen without internet</div>
+          <div style="font-size:0.75rem;color:#7dc97d;margin-top:0.15rem">Tap ⬇ on any chapter to save it for offline listening</div>
         </div>
       </div>
-      <div style="display:flex;gap:0.6rem;align-items:center">
-        <button id="install-btn" onclick="installApp()" style="background:var(--gold);color:var(--purple-dark);border:none;border-radius:6px;padding:0.55rem 1.2rem;font-size:0.82rem;font-weight:700;cursor:pointer;font-family:'Lato',sans-serif">Install App</button>
-        <button onclick="document.getElementById('offline-banner').style.display='none'" style="background:transparent;border:none;color:var(--text-muted);cursor:pointer;font-size:1.2rem;line-height:1">✕</button>
-      </div>
-    </div>
-    <!-- iOS / Android tabs -->
-    <div id="install-tabs" style="display:none">
-      <div style="display:flex;gap:0.5rem;margin-bottom:1rem">
-        <button onclick="showInstallTab('ios')" id="tab-ios" style="flex:1;padding:0.4rem;border-radius:6px;border:1px solid var(--border);background:var(--purple-accent);color:var(--white);font-family:'Lato',sans-serif;font-size:0.78rem;font-weight:600;cursor:pointer"> iPhone / iPad</button>
-        <button onclick="showInstallTab('android')" id="tab-android" style="flex:1;padding:0.4rem;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text-muted);font-family:'Lato',sans-serif;font-size:0.78rem;cursor:pointer"> Android</button>
-      </div>
-      <div id="install-ios">
-        <div style="display:flex;flex-direction:column;gap:0.6rem">
-          <div style="display:flex;align-items:center;gap:0.8rem;font-size:0.82rem;color:var(--text-body)"><span style="width:24px;height:24px;border-radius:50%;background:var(--gold);color:var(--purple-dark);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.75rem;flex-shrink:0">1</span>Tap the <strong style="color:var(--gold)">Share</strong> button at the bottom of Safari (the box with an arrow ↑)</div>
-          <div style="display:flex;align-items:center;gap:0.8rem;font-size:0.82rem;color:var(--text-body)"><span style="width:24px;height:24px;border-radius:50%;background:var(--gold);color:var(--purple-dark);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.75rem;flex-shrink:0">2</span>Scroll down and tap <strong style="color:var(--gold)">"Add to Home Screen"</strong></div>
-          <div style="display:flex;align-items:center;gap:0.8rem;font-size:0.82rem;color:var(--text-body)"><span style="width:24px;height:24px;border-radius:50%;background:var(--gold);color:var(--purple-dark);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.75rem;flex-shrink:0">3</span>Tap <strong style="color:var(--gold)">"Add"</strong> — the app icon appears on your home screen!</div>
-        </div>
-      </div>
-      <div id="install-android" style="display:none">
-        <div style="display:flex;flex-direction:column;gap:0.6rem">
-          <div style="display:flex;align-items:center;gap:0.8rem;font-size:0.82rem;color:var(--text-body)"><span style="width:24px;height:24px;border-radius:50%;background:var(--gold);color:var(--purple-dark);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.75rem;flex-shrink:0">1</span>Tap the <strong style="color:var(--gold)">menu (⋮)</strong> in the top-right of Chrome</div>
-          <div style="display:flex;align-items:center;gap:0.8rem;font-size:0.82rem;color:var(--text-body)"><span style="width:24px;height:24px;border-radius:50%;background:var(--gold);color:var(--purple-dark);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.75rem;flex-shrink:0">2</span>Tap <strong style="color:var(--gold)">"Add to Home Screen"</strong> or <strong style="color:var(--gold)">"Install App"</strong></div>
-          <div style="display:flex;align-items:center;gap:0.8rem;font-size:0.82rem;color:var(--text-body)"><span style="width:24px;height:24px;border-radius:50%;background:var(--gold);color:var(--purple-dark);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.75rem;flex-shrink:0">3</span>Tap <strong style="color:var(--gold)">"Install"</strong> — the app icon appears on your home screen!</div>
-        </div>
-      </div>
+      <button onclick="document.getElementById('offline-banner').style.display='none'" style="background:transparent;border:none;color:var(--text-muted);cursor:pointer;font-size:1.2rem;line-height:1">✕</button>
     </div>
   </div>
 
@@ -507,47 +483,92 @@ const durMap = {
 chapters.forEach(ch => { if(durMap[ch.id]) ch.dur = durMap[ch.id]; });
 
 // Register Service Worker for offline support
-if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('./sw.js').then(()=>{
-    console.log('Offline support ready');
-    // Listen for cache status messages from SW
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').then(reg => {
+    console.log('SW registered');
+
+    // Listen for cache status replies from SW
     navigator.serviceWorker.addEventListener('message', e => {
-      if(e.data.type === 'CACHED_STATUS' && e.data.cached){
-        const id = Object.entries(audioMap).find(([k,v])=> e.data.url.includes(v))?.[0];
-        if(id){ cachedChapters.add(parseInt(id)); updateDlBtn(parseInt(id)); }
-      }
-    });
-    // Check which chapters are already cached
-    Object.entries(audioMap).forEach(([id, file])=>{
-      if(file && navigator.serviceWorker.controller){
-        navigator.serviceWorker.controller.postMessage({
-          type:'CHECK_CACHED', url: BASE_STREAM+file
+      if (e.data.type === 'CACHE_STATUS') {
+        Object.entries(e.data.results).forEach(([id, cached]) => {
+          if (cached) {
+            cachedChapters.add(parseInt(id));
+            updateDlBtn(parseInt(id));
+          }
         });
+        renderGrid('');
+      }
+      if (e.data.type === 'DOWNLOAD_DONE') {
+        const chNum = e.data.url.match(/chapter_(\d+)/)?.[1];
+        if (chNum) {
+          const id = parseInt(chNum);
+          cachedChapters.add(id);
+          updateDlBtn(id);
+          updateDlBtnProgress(id, 100);
+        }
+      }
+      if (e.data.type === 'DOWNLOAD_ERROR') {
+        const chNum = e.data.url.match(/chapter_(\d+)/)?.[1];
+        if (chNum) updateDlBtnError(parseInt(chNum));
       }
     });
-  }).catch(()=>{});
+
+    // Ask SW which chapters are already cached
+    if (navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage({ type: 'CHECK_ALL_CACHED' });
+    } else {
+      reg.addEventListener('updatefound', () => {
+        reg.installing?.addEventListener('statechange', () => {
+          if (navigator.serviceWorker.controller) {
+            navigator.serviceWorker.controller.postMessage({ type: 'CHECK_ALL_CACHED' });
+          }
+        });
+      });
+    }
+  });
 }
 
 const cachedChapters = new Set();
 
-function cacheChapter(id){
+function cacheChapter(id) {
   const file = audioMap[id];
-  if(!file) return;
+  if (!file) return;
   const url = BASE_STREAM + file;
-  if(navigator.serviceWorker.controller){
-    navigator.serviceWorker.controller.postMessage({type:'CACHE_AUDIO', url});
+  if (navigator.serviceWorker?.controller) {
+    navigator.serviceWorker.controller.postMessage({ type: 'DOWNLOAD_CHAPTER', url });
+    updateDlBtnProgress(id, 0); // show loading state
   }
-  cachedChapters.add(id);
-  setTimeout(()=>updateDlBtn(id), 500);
 }
 
-function updateDlBtn(id){
-  const btn = document.getElementById('dl-btn-'+id);
-  if(btn && cachedChapters.has(id)){
-    btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 8l3.5 3.5L13 5" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+function updateDlBtn(id) {
+  const btn = document.getElementById('dl-btn-' + id);
+  if (btn && cachedChapters.has(id)) {
+    btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8l3.5 3.5L13 5" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
     btn.style.background = '#1a9040';
     btn.style.boxShadow = '0 2px 8px rgba(26,144,64,0.5)';
     btn.title = 'Saved for offline listening';
+    btn.style.cursor = 'default';
+  }
+}
+
+function updateDlBtnProgress(id, pct) {
+  const btn = document.getElementById('dl-btn-' + id);
+  if (!btn) return;
+  if (pct === 0) {
+    btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 14 14"><circle cx="7" cy="7" r="5" stroke="white" stroke-width="2" fill="none" stroke-dasharray="8 24" stroke-linecap="round"><animateTransform attributeName="transform" type="rotate" from="0 7 7" to="360 7 7" dur="0.8s" repeatCount="indefinite"/></circle></svg>';
+    btn.title = 'Downloading...';
+  }
+}
+
+function updateDlBtnError(id) {
+  const btn = document.getElementById('dl-btn-' + id);
+  if (btn) {
+    btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 3v5M7 10v1" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>';
+    btn.style.background = '#c0392b';
+    btn.title = 'Download failed — tap to retry';
+    btn.style.cursor = 'pointer';
+    // Re-enable click to retry
+    btn.onclick = (e) => { e.stopPropagation(); cacheChapter(id); };
   }
 }
 
@@ -741,51 +762,11 @@ audioEl.addEventListener('ended', () => {
 // Check for saved position on load
 setTimeout(checkLocalResume, 1000);
 
-// PWA install prompt
-let deferredPrompt = null;
-window.addEventListener('beforeinstallprompt', e => {
-  e.preventDefault();
-  deferredPrompt = e;
-  document.getElementById('offline-banner').style.display = 'block';
-});
-window.addEventListener('appinstalled', () => {
-  document.getElementById('offline-banner').style.display = 'none';
-  deferredPrompt = null;
-});
-
-// Always show the install banner after 3 seconds (for iOS users who won't get beforeinstallprompt)
+// Show offline tip banner after 2 seconds
 setTimeout(() => {
   const banner = document.getElementById('offline-banner');
-  if(banner.style.display === 'none' || banner.style.display === '') {
-    banner.style.display = 'block';
-    // Show instruction tabs for manual install
-    document.getElementById('install-tabs').style.display = 'block';
-    // Auto-detect iOS vs Android
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    showInstallTab(isIOS ? 'ios' : 'android');
-  }
-}, 3000);
-
-function showInstallTab(tab) {
-  document.getElementById('install-ios').style.display = tab === 'ios' ? 'block' : 'none';
-  document.getElementById('install-android').style.display = tab === 'android' ? 'block' : 'none';
-  document.getElementById('tab-ios').style.background = tab === 'ios' ? 'var(--purple-accent)' : 'transparent';
-  document.getElementById('tab-ios').style.color = tab === 'ios' ? 'var(--white)' : 'var(--text-muted)';
-  document.getElementById('tab-android').style.background = tab === 'android' ? 'var(--purple-accent)' : 'transparent';
-  document.getElementById('tab-android').style.color = tab === 'android' ? 'var(--white)' : 'var(--text-muted)';
-}
-
-function installApp(){
-  if(deferredPrompt){
-    deferredPrompt.prompt();
-    deferredPrompt.userChoice.then(()=>{ deferredPrompt = null; });
-  } else {
-    // Show manual steps
-    document.getElementById('install-tabs').style.display = 'block';
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    showInstallTab(isIOS ? 'ios' : 'android');
-  }
-}
+  if (banner) banner.style.display = 'block';
+}, 2000);
 
 renderGrid('');
 </script>
