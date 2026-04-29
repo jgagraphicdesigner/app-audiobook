@@ -285,6 +285,24 @@ footer{background:var(--purple-mid);border-top:1px solid var(--border);padding:2
   </div>
   <div style="height:1.5rem"></div>
 
+  <!-- Resume Banner (shown when returning to app mid-chapter) -->
+  <div id="resume-banner" style="display:none;background:linear-gradient(135deg,#1e2d1a,#162414);border:1px solid #2a4a2a;border-radius:var(--radius);padding:1rem 1.4rem;margin-bottom:1rem;display:none;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.8rem">
+    <div style="display:flex;align-items:center;gap:0.9rem">
+      <span style="font-size:1.4rem">▶️</span>
+      <div>
+        <div id="resume-title" style="font-size:0.88rem;font-weight:700;color:var(--white)">Resume Chapter</div>
+        <div id="resume-time" style="font-size:0.75rem;color:#7dc97d;margin-top:0.15rem">Pick up where you left off</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:0.6rem;align-items:center">
+      <button id="resume-btn" onclick="resumePlayback()" style="background:#22a84a;color:#fff;border:none;border-radius:6px;padding:0.5rem 1.1rem;font-size:0.82rem;font-weight:700;cursor:pointer;font-family:'Lato',sans-serif;display:flex;align-items:center;gap:0.4rem">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="white"><polygon points="2,1 10,6 2,11"/></svg>
+        Resume
+      </button>
+      <button onclick="dismissResume()" style="background:transparent;border:none;color:var(--text-muted);cursor:pointer;font-size:1.2rem;line-height:1">✕</button>
+    </div>
+  </div>
+
   <!-- Install App Banner -->
   <div id="offline-banner" style="display:none;background:linear-gradient(135deg,#2a1a3a,#1e1030);border:1px solid var(--border);border-radius:var(--radius);padding:1.2rem 1.4rem;margin-bottom:1.4rem">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:0.8rem">
@@ -490,9 +508,9 @@ function cacheChapter(id){
 function updateDlBtn(id){
   const btn = document.getElementById('dl-btn-'+id);
   if(btn && cachedChapters.has(id)){
-    btn.innerHTML = '✅';
-    btn.style.background = '#1d9040';
-    btn.style.boxShadow = '0 2px 8px rgba(29,144,64,0.5)';
+    btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 8l3.5 3.5L13 5" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    btn.style.background = '#1a9040';
+    btn.style.boxShadow = '0 2px 8px rgba(26,144,64,0.5)';
     btn.title = 'Saved for offline listening';
   }
 }
@@ -532,7 +550,7 @@ function renderGrid(search){
           <span>${ch.dur ? ch.dur : (hasAudio ? 'Listen now' : 'Coming soon')}</span>
         </div>
         <div style="display:flex;align-items:center;gap:0.5rem">
-          ${dlUrl ? `<a href="${dlUrl}" download="Positively_Geared_${ch.num.replace(' ','_')}.mp3" onclick="event.stopPropagation();cacheChapter(${ch.id})" title="Download for offline listening" id="dl-btn-${ch.id}" style="width:36px;height:36px;border-radius:50%;background:#22a84a;display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:1rem;transition:all 0.2s;flex-shrink:0;box-shadow:0 2px 8px rgba(34,168,74,0.4)" onmouseover="this.style.background='#1d9040';this.style.transform='scale(1.1)'" onmouseout="this.style.background=cachedChapters.has(${ch.id})?'#1d9040':'#22a84a';this.style.transform='scale(1)'">&#x2B07;&#xFE0F;</a>` : ''}
+          ${dlUrl ? `<a href="${dlUrl}" download="Positively_Geared_${ch.num.replace(' ','_')}.mp3" onclick="event.stopPropagation();cacheChapter(${ch.id})" title="Download for offline listening" id="dl-btn-${ch.id}" style="width:36px;height:36px;border-radius:50%;background:#22a84a;display:flex;align-items:center;justify-content:center;text-decoration:none;flex-shrink:0;box-shadow:0 2px 8px rgba(34,168,74,0.4);transition:all 0.2s" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 2v8M5 7l3 3 3-3M3 13h10" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></a>` : ''}
           <button class="chapter-play" style="${!hasAudio?'opacity:0.35;cursor:not-allowed':''}" onclick="event.stopPropagation();${hasAudio?`playChapter(chapters.find(c=>c.id==${ch.id}))`:''}">
             ${isCurrent&&playing?'⏸':'▶'}
           </button>
@@ -612,6 +630,80 @@ audioEl.addEventListener('ended',()=>{
 });
 
 function filterChapters(v){renderGrid(v.toLowerCase());}
+
+// ── RESUME LOGIC ────────────────────────────────────────────────────────
+
+let resumeChapterId = -1;
+let resumePosition = 0;
+
+// Called by Android native bridge when app opens with saved state
+window.showResumePrompt = function(chapterId, positionSeconds) {
+  const ch = chapters.find(c => c.id === chapterId);
+  if (!ch) return;
+  resumeChapterId = chapterId;
+  resumePosition = positionSeconds;
+
+  const mins = Math.floor(positionSeconds / 60);
+  const secs = positionSeconds % 60;
+  const timeStr = mins + ':' + String(secs).padStart(2, '0');
+
+  document.getElementById('resume-title').textContent = ch.num + ': ' + ch.title;
+  document.getElementById('resume-time').textContent = 'Paused at ' + timeStr + ' of ' + (ch.dur || '');
+  document.getElementById('resume-banner').style.display = 'flex';
+};
+
+// Also check localStorage for web-only resume (non-Android)
+function checkLocalResume() {
+  if (window.AndroidBridge) return; // Android handles it natively
+  try {
+    const saved = JSON.parse(localStorage.getItem('pg_resume') || '{}');
+    if (saved.chapter && saved.position > 10) {
+      window.showResumePrompt(saved.chapter, saved.position);
+    }
+  } catch(e) {}
+}
+
+function resumePlayback() {
+  const ch = chapters.find(c => c.id === resumeChapterId);
+  if (!ch) return;
+  dismissResume();
+  playChapter(ch);
+  // Seek after audio loads
+  audioEl.addEventListener('loadedmetadata', function seekOnce() {
+    audioEl.currentTime = resumePosition;
+    audioEl.removeEventListener('loadedmetadata', seekOnce);
+  });
+}
+
+function dismissResume() {
+  document.getElementById('resume-banner').style.display = 'none';
+  resumeChapterId = -1;
+  resumePosition = 0;
+}
+
+// Save position every 5 seconds while playing
+setInterval(() => {
+  if (!currentChapter || !playing || !audioEl.currentTime) return;
+  const pos = Math.floor(audioEl.currentTime);
+  if (pos < 5) return;
+  // Save to Android bridge
+  if (window.AndroidBridge) {
+    AndroidBridge.savePlaybackPosition(currentChapter.id, pos);
+  }
+  // Save to localStorage for web
+  try {
+    localStorage.setItem('pg_resume', JSON.stringify({chapter: currentChapter.id, position: pos}));
+  } catch(e) {}
+}, 5000);
+
+// Clear position when chapter finishes
+audioEl.addEventListener('ended', () => {
+  if (window.AndroidBridge) AndroidBridge.clearPlaybackPosition();
+  try { localStorage.removeItem('pg_resume'); } catch(e) {}
+});
+
+// Check for saved position on load
+setTimeout(checkLocalResume, 1000);
 
 // PWA install prompt
 let deferredPrompt = null;
