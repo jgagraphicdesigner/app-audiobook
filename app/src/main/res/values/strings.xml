@@ -2,4 +2,5 @@
 <resources>
     <string name="app_name">Positively Geared</string>
     <string name="app_description">Audiobook by Lloyd Edge — Aus Property Professionals</string>
+    <string name="app_version">2.0</string>
 </resources>
