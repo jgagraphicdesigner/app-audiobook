@@ -1,15 +1,7 @@
-const CACHE_NAME = 'positively-geared-v4';
-const AUDIO_CACHE = 'positively-geared-audio-v4';
+const CACHE_NAME = 'positively-geared-v5';
+const AUDIO_CACHE = 'positively-geared-audio-v5';
 
 const SHELL_FILES = ['./', './index.html', './manifest.json'];
-
-const AUDIO_FILES = [
-  'chapter_1.mp3','chapter_2.mp3','chapter_3.mp3','chapter_4.mp3',
-  'chapter_5.mp3','chapter_6.mp3','chapter_7.mp3','chapter_8.mp3',
-  'chapter_9.mp3','chapter_10.mp3','chapter_11.mp3'
-];
-
-const BASE = 'https://github.com/jgagraphicdesigner/app-audiobook/releases/download/audio-v1/';
 
 self.addEventListener('install', e => {
   e.waitUntil(
@@ -31,30 +23,10 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
+  // Only intercept shell files — let audio play directly (Google Drive handles CORS fine)
   const url = e.request.url;
-  const filename = AUDIO_FILES.find(f => url.includes(f));
+  if (url.includes('drive.google.com')) return; // let browser handle Google Drive directly
 
-  if (filename) {
-    // Serve audio from cache if available
-    e.respondWith(
-      caches.open(AUDIO_CACHE).then(async cache => {
-        const cacheKey = 'audio::' + filename;
-        const cached = await cache.match(cacheKey);
-        if (cached) return cached;
-        // Not cached — fetch and cache it
-        try {
-          const response = await fetch(BASE + filename, { redirect: 'follow' });
-          if (response.ok) await cache.put(cacheKey, response.clone());
-          return response;
-        } catch {
-          return new Response('Audio unavailable offline', { status: 503 });
-        }
-      })
-    );
-    return;
-  }
-
-  // Shell files — network first, cache fallback
   e.respondWith(
     fetch(e.request)
       .then(r => {
@@ -65,36 +37,38 @@ self.addEventListener('fetch', e => {
   );
 });
 
+// Download a chapter and cache it by chapter ID
 self.addEventListener('message', async e => {
   if (e.data?.type === 'DOWNLOAD_CHAPTER') {
-    const filename = e.data.filename;
-    const cacheKey = 'audio::' + filename;
+    const { url, id } = e.data;
+    const cacheKey = 'audio::ch' + id;
     const cache = await caches.open(AUDIO_CACHE);
+
     const existing = await cache.match(cacheKey);
     if (existing) {
-      notifyClients({ type: 'DOWNLOAD_DONE', filename, alreadyCached: true });
+      notifyClients({ type: 'DOWNLOAD_DONE', id, alreadyCached: true });
       return;
     }
+
     try {
-      const response = await fetch(BASE + filename, { redirect: 'follow' });
+      const response = await fetch(url, { redirect: 'follow' });
       if (response.ok) {
         await cache.put(cacheKey, response.clone());
-        notifyClients({ type: 'DOWNLOAD_DONE', filename });
+        notifyClients({ type: 'DOWNLOAD_DONE', id });
       } else {
-        notifyClients({ type: 'DOWNLOAD_ERROR', filename, status: response.status });
+        notifyClients({ type: 'DOWNLOAD_ERROR', id, status: response.status });
       }
     } catch(err) {
-      notifyClients({ type: 'DOWNLOAD_ERROR', filename, error: err.message });
+      notifyClients({ type: 'DOWNLOAD_ERROR', id, error: err.message });
     }
   }
 
   if (e.data?.type === 'CHECK_ALL_CACHED') {
     const cache = await caches.open(AUDIO_CACHE);
     const results = {};
-    for (const f of AUDIO_FILES) {
-      const cached = await cache.match('audio::' + f);
-      const chNum = f.match(/chapter_(\d+)/)[1];
-      results[chNum] = !!cached;
+    for (let i = 1; i <= 11; i++) {
+      const cached = await cache.match('audio::ch' + i);
+      results[i] = !!cached;
     }
     notifyClients({ type: 'CACHE_STATUS', results });
   }

@@ -457,22 +457,22 @@ const chapters = [
 ];
 
 // Base URLs for hosted audio
-const BASE_STREAM = 'https://github.com/jgagraphicdesigner/app-audiobook/releases/download/audio-v1/';
-const BASE_DOWNLOAD = 'https://github.com/jgagraphicdesigner/app-audiobook/releases/download/audio-v1/';
+const BASE_STREAM = '';
+const BASE_DOWNLOAD = '';
 
-// Audio file map — all chapters hosted on GitHub
+// Google Drive direct streaming URLs
 const audioMap = {
-  1:  'chapter_1.mp3',
-  2:  'chapter_2.mp3',
-  3:  'chapter_3.mp3',
-  4:  'chapter_4.mp3',
-  5:  'chapter_5.mp3',
-  6:  'chapter_6.mp3',
-  7:  'chapter_7.mp3',
-  8:  'chapter_8.mp3',
-  9:  'chapter_9.mp3',
-  10: 'chapter_10.mp3',
-  11: 'chapter_11.mp3',
+  1:  'https://drive.google.com/uc?export=download&id=1EwxD6m16-ZYftdRQj2paVQFW9mOf1FE8',
+  2:  'https://drive.google.com/uc?export=download&id=1GHKvsFIl6nwRwUt1oU0h35V2u8HTWH1-',
+  3:  'https://drive.google.com/uc?export=download&id=1NT_CmnoSYEWVjAV9CVKZkGBGRYt7KOxr',
+  4:  'https://drive.google.com/uc?export=download&id=1PkVy0U5mT7FoVHyGhpTUkgGm5huAmMHI',
+  5:  'https://drive.google.com/uc?export=download&id=1Zv7_bokcRQMg8cY28Zhz9o-TvICUofte',
+  6:  'https://drive.google.com/uc?export=download&id=1dD7OYhq6rnSevs9O5izqtqMut27IWUKo',
+  7:  'https://drive.google.com/uc?export=download&id=1kAvEV9p6yILuy50Rs9NwHaLYzT8kdRyv',
+  8:  'https://drive.google.com/uc?export=download&id=1pTyzsbvDpOsSERt69o4uVB59WFvYCxoJ',
+  9:  'https://drive.google.com/uc?export=download&id=1x8QPoKCjG5QQ-H507FAqHky_WJSSHffq',
+  10: 'https://drive.google.com/uc?export=download&id=1xUUiRWOnp7UFdSKnqrqyvURYM8PL2-BT',
+  11: 'https://drive.google.com/uc?export=download&id=1xl7s2gxUIcV_0YP_Em6t1Ohg6_QSMWWR',
 };
 
 // Real durations from audio metadata
@@ -502,19 +502,16 @@ if ('serviceWorker' in navigator) {
         if (cachedChapters.size >= chapters.length) showDlAllDone();
       }
       if (e.data.type === 'DOWNLOAD_DONE') {
-        const filename = e.data.filename;
-        const chNum = filename?.match(/chapter_(\d+)/)?.[1];
-        if (chNum) {
-          const id = parseInt(chNum);
+        const id = e.data.id;
+        if (id) {
           cachedChapters.add(id);
           updateDlBtn(id);
           updateDlBtnProgress(id, 100);
         }
       }
       if (e.data.type === 'DOWNLOAD_ERROR') {
-        const filename = e.data.filename;
-        const chNum = filename?.match(/chapter_(\d+)/)?.[1];
-        if (chNum) updateDlBtnError(parseInt(chNum));
+        const id = e.data.id;
+        if (id) updateDlBtnError(id);
       }
     });
 
@@ -536,10 +533,10 @@ if ('serviceWorker' in navigator) {
 const cachedChapters = new Set();
 
 function cacheChapter(id) {
-  const file = audioMap[id];
-  if (!file) return;
+  const url = audioMap[id];
+  if (!url) return;
   if (navigator.serviceWorker?.controller) {
-    navigator.serviceWorker.controller.postMessage({ type: 'DOWNLOAD_CHAPTER', filename: file });
+    navigator.serviceWorker.controller.postMessage({ type: 'DOWNLOAD_CHAPTER', url, id });
     updateDlBtnProgress(id, 0);
   }
 }
@@ -583,8 +580,8 @@ let speeds = [1,1.25,1.5,1.75,2];
 let speedIdx = 0;
 const audioEl = document.getElementById('audio-el');
 
-function getStreamUrl(ch){ return audioMap[ch.id] ? BASE_STREAM + audioMap[ch.id] : null; }
-function getDownloadUrl(ch){ return audioMap[ch.id] ? BASE_DOWNLOAD + audioMap[ch.id] : null; }
+function getStreamUrl(ch){ return audioMap[ch.id] || null; }
+function getDownloadUrl(ch){ return audioMap[ch.id] || null; }
 
 function fmtTime(s){
   if(isNaN(s)||!isFinite(s)) return '0:00';
@@ -630,8 +627,8 @@ function playChapter(ch, startAt){
 
   audioEl.oncanplay = null;
 
-  // Set src directly — let the browser handle the redirect
-  audioEl.src = BASE_STREAM + audioMap[ch.id];
+  // Set src directly from audioMap (full Google Drive URL)
+  audioEl.src = audioMap[ch.id];
   audioEl.playbackRate = speed;
   audioEl.volume = 0.8;
 
@@ -829,13 +826,13 @@ function downloadNextInQueue() {
   if (navigator.serviceWorker?.controller) {
     navigator.serviceWorker.controller.postMessage({
       type: 'DOWNLOAD_CHAPTER',
-      filename: audioMap[id]
+      url: audioMap[id],
+      id
     });
   } else {
-    // Fallback: direct fetch
-    fetch(BASE_STREAM + audioMap[id], { redirect: 'follow' })
+    fetch(audioMap[id], { redirect: 'follow' })
       .then(r => r.ok ? caches.open('positively-geared-audio-v4')
-        .then(cache => cache.put('audio::' + audioMap[id], r)) : null)
+        .then(cache => cache.put('audio::' + id, r)) : null)
       .then(() => {
         cachedChapters.add(id);
         updateDlBtn(id);
@@ -850,10 +847,8 @@ function downloadNextInQueue() {
 
 function handleDlAllMessage(e) {
   if (e.data.type === 'DOWNLOAD_DONE' || e.data.type === 'DOWNLOAD_ERROR') {
-    const filename = e.data.filename;
-    const chNum = filename?.match(/chapter_(\d+)/)?.[1];
-    if (chNum) {
-      const id = parseInt(chNum);
+    const id = e.data.id;
+    if (id) {
       if (e.data.type === 'DOWNLOAD_DONE') {
         cachedChapters.add(id);
         updateDlBtn(id);
