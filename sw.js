@@ -35,54 +35,48 @@ self.addEventListener('fetch', e => {
   const filename = AUDIO_FILES.find(f => url.includes(f));
 
   if (filename) {
+    // Serve audio from cache if available
     e.respondWith(
       caches.open(AUDIO_CACHE).then(async cache => {
-        // Check cache by filename key (not the expiring URL)
         const cacheKey = 'audio::' + filename;
         const cached = await cache.match(cacheKey);
-        if (cached) {
-          return cached;
-        }
-        // Not cached — fetch from network
+        if (cached) return cached;
+        // Not cached — fetch and cache it
         try {
           const response = await fetch(BASE + filename, { redirect: 'follow' });
-          if (response.ok) {
-            // Store with stable filename key so expiring URLs don't matter
-            await cache.put(cacheKey, response.clone());
-          }
+          if (response.ok) await cache.put(cacheKey, response.clone());
           return response;
         } catch {
-          return new Response('Audio not available offline yet', { status: 503 });
+          return new Response('Audio unavailable offline', { status: 503 });
         }
       })
     );
-  } else {
-    e.respondWith(
-      fetch(e.request)
-        .then(r => {
-          if (r.ok) caches.open(CACHE_NAME).then(c => c.put(e.request, r.clone()));
-          return r;
-        })
-        .catch(() => caches.match(e.request))
-    );
+    return;
   }
+
+  // Shell files — network first, cache fallback
+  e.respondWith(
+    fetch(e.request)
+      .then(r => {
+        if (r.ok) caches.open(CACHE_NAME).then(c => c.put(e.request, r.clone()));
+        return r;
+      })
+      .catch(() => caches.match(e.request))
+  );
 });
 
 self.addEventListener('message', async e => {
   if (e.data?.type === 'DOWNLOAD_CHAPTER') {
     const filename = e.data.filename;
-    const url = BASE + filename;
     const cacheKey = 'audio::' + filename;
-
     const cache = await caches.open(AUDIO_CACHE);
     const existing = await cache.match(cacheKey);
     if (existing) {
       notifyClients({ type: 'DOWNLOAD_DONE', filename, alreadyCached: true });
       return;
     }
-
     try {
-      const response = await fetch(url, { redirect: 'follow' });
+      const response = await fetch(BASE + filename, { redirect: 'follow' });
       if (response.ok) {
         await cache.put(cacheKey, response.clone());
         notifyClients({ type: 'DOWNLOAD_DONE', filename });
