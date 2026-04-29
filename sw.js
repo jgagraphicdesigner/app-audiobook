@@ -1,5 +1,5 @@
-const CACHE_NAME = 'positively-geared-v6';
-const AUDIO_CACHE = 'positively-geared-audio-v6';
+const CACHE_NAME = 'positively-geared-v7';
+const AUDIO_CACHE = 'positively-geared-audio-v7';
 const SHELL_FILES = ['./', './index.html', './manifest.json'];
 
 self.addEventListener('install', e => {
@@ -14,7 +14,8 @@ self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys()
       .then(keys => Promise.all(
-        keys.filter(k => k !== CACHE_NAME && k !== AUDIO_CACHE).map(k => caches.delete(k))
+        keys.filter(k => k !== CACHE_NAME && k !== AUDIO_CACHE)
+            .map(k => caches.delete(k))
       ))
       .then(() => self.clients.claim())
   );
@@ -22,16 +23,23 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   const url = e.request.url;
-  // Let Dropbox and external audio requests pass through untouched
-  if (url.includes('dropbox.com')) return;
-  // Shell: network first, cache fallback
+
+  // NEVER intercept audio files — let the browser stream them natively
+  // This prevents the SW from breaking range requests needed for seeking
+  if (url.includes('.mp3') || url.includes('/audio/')) return;
+
+  // Shell files only — network first, cache fallback
   e.respondWith(
     fetch(e.request)
-      .then(r => { if(r.ok) caches.open(CACHE_NAME).then(c => c.put(e.request, r.clone())); return r; })
+      .then(r => {
+        if (r.ok) caches.open(CACHE_NAME).then(c => c.put(e.request, r.clone()));
+        return r;
+      })
       .catch(() => caches.match(e.request))
   );
 });
 
+// Background download for offline — fetch and store in audio cache
 self.addEventListener('message', async e => {
   if (e.data?.type === 'DOWNLOAD_CHAPTER') {
     const { url, id } = e.data;
@@ -41,11 +49,12 @@ self.addEventListener('message', async e => {
       notifyClients({ type: 'DOWNLOAD_DONE', id, alreadyCached: true }); return;
     }
     try {
-      const r = await fetch(url, { redirect: 'follow' });
+      const r = await fetch(url);
       if (r.ok) { await cache.put(cacheKey, r.clone()); notifyClients({ type: 'DOWNLOAD_DONE', id }); }
       else notifyClients({ type: 'DOWNLOAD_ERROR', id, status: r.status });
     } catch(err) { notifyClients({ type: 'DOWNLOAD_ERROR', id, error: err.message }); }
   }
+
   if (e.data?.type === 'CHECK_ALL_CACHED') {
     const cache = await caches.open(AUDIO_CACHE);
     const results = {};
