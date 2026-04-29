@@ -212,7 +212,7 @@ footer{background:var(--purple-mid);border-top:1px solid var(--border);padding:2
   .vol-wrap{display:none}
   .player-prog{gap:0.5rem}
   .time{font-size:0.65rem;min-width:28px}
-  .player-spacer{height:110px}
+  .player-spacer{height:120px}
 
   /* Footer */
   footer{padding:1.5rem 1.2rem}
@@ -500,7 +500,7 @@ footer{background:var(--purple-mid);border-top:1px solid var(--border);padding:2
   </div>
 </footer>
 
-<audio id="audio-el" preload="none"></audio>
+<audio id="audio-el" preload="none" crossorigin="anonymous"></audio>
 
 <script>
 const chapters = [
@@ -567,7 +567,13 @@ async function saveAudioBlob(id, blob) {
     const tx = d.transaction(DB_STORE, 'readwrite');
     tx.objectStore(DB_STORE).put(blob, id);
     tx.oncomplete = res;
-    tx.onerror = () => rej(tx.error);
+    tx.onerror = () => {
+      const err = tx.error;
+      if (err && err.name === 'QuotaExceededError') {
+        console.warn('Storage full — chapter ' + id + ' not saved offline');
+      }
+      rej(err);
+    };
   });
 }
 
@@ -1013,9 +1019,6 @@ function updateDlAllProgress() {
 }
 
 function showDlAllDone() {
-  if (navigator.serviceWorker) {
-    navigator.serviceWorker.removeEventListener('message', handleDlAllMessage);
-  }
   document.getElementById('dl-all-idle').style.display = 'none';
   document.getElementById('dl-all-progress').style.display = 'none';
   document.getElementById('dl-all-done').style.display = 'flex';
