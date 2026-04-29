@@ -386,6 +386,9 @@ footer{background:var(--purple-mid);border-top:1px solid var(--border);padding:2
         <div style="font-size:1rem;font-weight:700;color:var(--white)">🎉 All 11 chapters downloaded!</div>
         <div style="font-size:0.82rem;color:#7dc97d;margin-top:0.3rem">You can now enjoy listening offline — anytime, anywhere, no internet needed.</div>
         <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.4rem">Turn on airplane mode and tap any chapter to start listening 🎧</div>
+        <div id="ios-offline-tip" style="display:none;margin-top:0.6rem;background:rgba(201,168,232,0.1);border:1px solid rgba(201,168,232,0.3);border-radius:6px;padding:0.5rem 0.7rem;font-size:0.73rem;color:#c9a8e8">
+          💡 <strong>iPhone tip:</strong> Keep this app added to your Home Screen. Safari may ask to reload — your downloaded chapters will still be available offline.
+        </div>
       </div>
     </div>
 
@@ -1056,6 +1059,10 @@ function showDlAllDone() {
   document.getElementById('dl-all-idle').style.display = 'none';
   document.getElementById('dl-all-progress').style.display = 'none';
   document.getElementById('dl-all-done').style.display = 'flex';
+  // Show iOS-specific tip on iPhone/iPad
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  const iosTip = document.getElementById('ios-offline-tip');
+  if (iosTip && isIOS) iosTip.style.display = 'block';
   renderGrid('');
 }
 
