@@ -155,6 +155,80 @@ footer{background:var(--purple-mid);border-top:1px solid var(--border);padding:2
 .chapter-card:nth-child(6){animation-delay:0.3s}
 .chapter-card:nth-child(7){animation-delay:0.35s}
 .chapter-card:nth-child(8){animation-delay:0.4s}
+
+/* ── MOBILE RESPONSIVE ── */
+@media(max-width:768px){
+
+  /* Nav */
+  nav{padding:0.75rem 1rem;gap:0.6rem}
+  .nav-title{display:none}
+  .nav-cta{gap:0.6rem}
+  .search-wrap input{width:130px;font-size:0.78rem;padding:0.4rem 0.6rem 0.4rem 1.8rem}
+  .btn-cta{padding:0.45rem 0.85rem;font-size:0.75rem}
+  .nav-logo img{height:38px}
+
+  /* Hero — stack vertically */
+  .hero{grid-template-columns:1fr !important;padding:2rem 1.2rem 1.8rem;gap:1.5rem}
+  .hero-book{display:flex;justify-content:center}
+  .hero-book img{width:140px !important}
+  .hero h1{font-size:2rem}
+  .hero-eyebrow{font-size:0.68rem}
+  .hero-author{font-size:0.88rem}
+  .hero-desc{font-size:0.85rem;margin-bottom:1.4rem}
+  .hero-stats{gap:1.2rem;margin-bottom:1.5rem}
+  .stat-num{font-size:1.25rem}
+  .stat-label{font-size:0.65rem}
+  .award-badge{font-size:0.65rem;padding:0.25rem 0.65rem}
+  .btn-primary{padding:0.65rem 1.2rem;font-size:0.82rem}
+  .btn-outline{padding:0.65rem 1rem;font-size:0.82rem}
+
+  /* Chapter grid — single column */
+  .section-wrap{padding:1.8rem 1.2rem}
+  .chapter-grid{grid-template-columns:1fr}
+  .chapter-card{padding:1rem 1.1rem}
+  .chapter-title{font-size:0.95rem}
+
+  /* Offline banner */
+  #offline-banner{padding:0.9rem 1rem}
+
+  /* About section */
+  .about-grid{grid-template-columns:1fr !important}
+  .about-stats{grid-template-columns:1fr 1fr}
+
+  /* Player bar — compact mobile layout */
+  .player{padding:0.6rem 1rem}
+  .player-inner{grid-template-columns:1fr auto !important;grid-template-rows:auto auto;gap:0.5rem}
+  .player-book{grid-column:1;grid-row:1}
+  .player-right{grid-column:2;grid-row:1;flex-direction:column;gap:0.4rem;align-items:flex-end}
+  .player-center{grid-column:1/-1;grid-row:2}
+  .player-info .ch-title{max-width:160px;font-size:0.78rem}
+  .player-info .ch-book{font-size:0.68rem}
+  .player-icon{width:36px;height:36px;font-size:1rem}
+  .ctrl-main{width:38px;height:38px;font-size:1rem}
+  .ctrl{font-size:0.72rem}
+  .vol-wrap{display:none}
+  .player-prog{gap:0.5rem}
+  .time{font-size:0.65rem;min-width:28px}
+  .player-spacer{height:110px}
+
+  /* Footer */
+  footer{padding:1.5rem 1.2rem}
+  .footer-inner{flex-direction:column;align-items:flex-start;gap:0.8rem}
+  .footer-links{flex-wrap:wrap;gap:0.8rem 1.2rem}
+  .footer-links a{font-size:0.76rem}
+  .footer-copy{font-size:0.68rem}
+}
+
+@media(max-width:420px){
+  nav{padding:0.65rem 0.9rem}
+  .search-wrap{display:none}
+  .hero{padding:1.6rem 1rem 1.5rem}
+  .hero h1{font-size:1.75rem}
+  .section-wrap{padding:1.4rem 1rem}
+  .player{padding:0.5rem 0.8rem}
+  .player-info .ch-title{max-width:130px}
+  .btn-cta{padding:0.4rem 0.7rem;font-size:0.72rem}
+}
 </style>
 </head>
 <body>
@@ -228,7 +302,7 @@ footer{background:var(--purple-mid);border-top:1px solid var(--border);padding:2
 
 <!-- About section -->
 <div class="section-wrap" style="border-top:1px solid var(--border);padding-top:2.5rem">
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:3rem;align-items:center">
+  <div class="about-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:3rem;align-items:center">
     <div>
       <div class="hero-eyebrow" style="margin-bottom:0.6rem">About the author</div>
       <div class="section-title" style="font-family:Georgia,serif;color:var(--white);font-size:1.4rem;margin-bottom:0.8rem">Lloyd Edge</div>
@@ -236,7 +310,7 @@ footer{background:var(--purple-mid);border-top:1px solid var(--border);padding:2
       <p style="font-size:0.9rem;color:var(--text-muted);line-height:1.8;margin-bottom:1.5rem">Today, through Aus Property Professionals, Lloyd helps everyday Australians do exactly the same, with strategic property buying that takes the stress out of the process.</p>
       <a href="https://www.auspropertyprofessionals.com.au/" target="_blank" class="btn-primary" style="text-decoration:none;display:inline-flex">Book a Free Discovery Session →</a>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+    <div class="about-stats" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
       <div style="background:var(--purple-mid);border:1px solid var(--border);border-radius:var(--radius);padding:1.2rem;text-align:center">
         <div style="font-family:Georgia,serif;font-size:1.8rem;color:var(--gold)">#1</div>
         <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.3rem">Buyer's Agent</div>
