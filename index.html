@@ -304,7 +304,29 @@ const chapters = [
   {id:11,num:"Chapter 11",title:"The Dream Team",subtitle:"Get your investment portfolio started right with these key players.",icon:"🤝",color:"#2a2a1a",dur:""},
 ];
 
-let audioFiles = {}; // chapterNum -> objectURL
+// Base URLs for hosted audio
+const BASE_STREAM = 'https://jgagraphicdesigner.github.io/app-audiobook/audio/';
+const BASE_DOWNLOAD = 'https://raw.githubusercontent.com/jgagraphicdesigner/app-audiobook/main/audio/';
+
+// Audio file map — add filename here when each chapter is uploaded
+const audioMap = {
+  1: 'chapter_1.mp3',
+  2: null,
+  3: null,
+  4: null,
+  5: null,
+  6: null,
+  7: null,
+  8: null,
+  9: null,
+  10: null,
+  11: null,
+};
+
+// Pre-set known durations
+const durMap = { 1: '47m 24s' };
+chapters.forEach(ch => { if(durMap[ch.id]) ch.dur = durMap[ch.id]; });
+
 let currentChapter = null;
 let playing = false;
 let speed = 1;
@@ -312,67 +334,8 @@ let speeds = [1,1.25,1.5,1.75,2];
 let speedIdx = 0;
 const audioEl = document.getElementById('audio-el');
 
-function loadAudioFiles(files){
-  let loaded = 0;
-  for(const f of files){
-    const url = URL.createObjectURL(f);
-    const name = f.name.toLowerCase();
-    let matched = false;
-    // Match ElevenLabs naming: ElevenLabs_Positively_Geared_Chapter_1_KNOW_YOUR_WHY.mp3
-    // Also match: Chapter_1.mp3, chapter1.mp3, ch1.mp3, ch_1.mp3
-    for(const ch of chapters){
-      const patterns = [
-        'chapter_'+ch.id+'_',
-        'chapter_'+ch.id+'.',
-        'chapter'+ch.id+'_',
-        'chapter'+ch.id+'.',
-        '_ch'+ch.id+'_',
-        'ch_'+ch.id+'_',
-        'ch_'+ch.id+'.',
-      ];
-      if(patterns.some(p => name.includes(p))){
-        audioFiles[ch.id] = url;
-        // Get duration from audio metadata
-        const tmpAudio = new Audio();
-        tmpAudio.src = url;
-        tmpAudio.addEventListener('loadedmetadata', (()=>{
-          const cid = ch.id;
-          return ()=>{
-            const secs = tmpAudio.duration;
-            const h=Math.floor(secs/3600),m=Math.floor((secs%3600)/60),s=Math.floor(secs%60);
-            const chRef = chapters.find(c=>c.id===cid);
-            if(chRef) chRef.dur = (h>0?h+'h ':'')+m+'m '+String(s).padStart(2,'0')+'s';
-            renderGrid(document.querySelector('nav input')?.value?.toLowerCase()||'');
-          };
-        })());
-        loaded++;
-        matched = true;
-        break;
-      }
-    }
-    // Fallback: match by first standalone number in filename
-    if(!matched){
-      const numMatch = name.match(/(?:^|[_\-\s])(\d{1,2})(?:[_\-\s\.]|$)/);
-      if(numMatch){
-        const id = parseInt(numMatch[1]);
-        const ch = chapters.find(c=>c.id===id);
-        if(ch && !audioFiles[ch.id]){
-          audioFiles[ch.id]=url;
-          loaded++;
-        }
-      }
-    }
-  }
-  if(loaded>0){
-    document.getElementById('load-status').style.display='flex';
-    document.getElementById('load-msg').textContent = loaded+' chapter'+(loaded!==1?'s':'')+' loaded and ready to play.';
-    renderGrid('');
-  } else {
-    document.getElementById('load-status').style.display='flex';
-    document.getElementById('load-status').className='no-audio';
-    document.getElementById('load-msg').textContent = 'Could not match files to chapters. Make sure filenames include the chapter number (e.g. Chapter_1.mp3).';
-  }
-}
+function getStreamUrl(ch){ return audioMap[ch.id] ? BASE_STREAM + audioMap[ch.id] : null; }
+function getDownloadUrl(ch){ return audioMap[ch.id] ? BASE_DOWNLOAD + audioMap[ch.id] : null; }
 
 function fmtTime(s){
   if(isNaN(s)||!isFinite(s)) return '0:00';
@@ -386,18 +349,24 @@ function renderGrid(search){
   let list = chapters;
   if(search) list = chapters.filter(c=>c.title.toLowerCase().includes(search)||c.num.toLowerCase().includes(search)||c.subtitle.toLowerCase().includes(search));
   g.innerHTML = list.map(ch=>{
-    const hasAudio = !!audioFiles[ch.id];
+    const hasAudio = !!audioMap[ch.id];
     const isCurrent = currentChapter && currentChapter.id===ch.id;
+    const dlUrl = getDownloadUrl(ch);
     return `<div class="chapter-card${isCurrent?' playing':''}" onclick="playChapter(chapters.find(c=>c.id==${ch.id}))">
-      <div class="chapter-num">${ch.num}${hasAudio?' · <span style="color:var(--gold)">▶ Ready</span>':' · Add MP3 to play'}</div>
+      <div class="chapter-num">${ch.num}${hasAudio ? (isCurrent&&playing ? ' · <span style="color:var(--gold)">▶ Playing</span>' : ' · <span style="color:var(--gold)">▶ Available</span>') : ' · Coming soon'}</div>
       <div class="chapter-title">${ch.title}</div>
       <div class="chapter-subtitle">${ch.subtitle}</div>
       <div class="chapter-meta">
         <div class="chapter-dur">
           <span style="font-size:1rem">${ch.icon}</span>
-          <span>${ch.dur ? ch.dur : (isCurrent&&playing?'Playing now...':'Listen')}</span>
+          <span>${ch.dur ? ch.dur : (hasAudio ? 'Listen now' : 'Coming soon')}</span>
         </div>
-        <button class="chapter-play" onclick="event.stopPropagation();playChapter(chapters.find(c=>c.id==${ch.id}))">${isCurrent&&playing?'⏸':'▶'}</button>
+        <div style="display:flex;align-items:center;gap:0.5rem">
+          ${dlUrl ? `<a href="${dlUrl}" download="Positively_Geared_${ch.num.replace(' ','_')}.mp3" onclick="event.stopPropagation()" title="Download for offline listening" style="width:30px;height:30px;border-radius:50%;background:var(--border);display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:0.8rem;transition:background 0.2s;flex-shrink:0" onmouseover="this.style.background='var(--purple-accent)'" onmouseout="this.style.background='var(--border)'">⬇</a>` : ''}
+          <button class="chapter-play" style="${!hasAudio?'opacity:0.35;cursor:not-allowed':''}" onclick="event.stopPropagation();${hasAudio?`playChapter(chapters.find(c=>c.id==${ch.id}))`:''}">
+            ${isCurrent&&playing?'⏸':'▶'}
+          </button>
+        </div>
       </div>
       <div class="progress-mini" id="mini-prog-${ch.id}"><div class="progress-mini-fill" id="mini-fill-${ch.id}" style="width:0%"></div></div>
     </div>`;
@@ -405,22 +374,17 @@ function renderGrid(search){
 }
 
 function playChapter(ch){
+  if(!audioMap[ch.id]) return;
   if(currentChapter && currentChapter.id===ch.id){togglePlay();return;}
   currentChapter = ch;
-  const url = audioFiles[ch.id];
-  if(url){
-    audioEl.src = url;
-    audioEl.playbackRate = speed;
-    audioEl.volume = 0.8;
-    audioEl.play();
-    playing = true;
-  } else {
-    playing = false;
-    audioEl.src = '';
-  }
+  audioEl.src = getStreamUrl(ch);
+  audioEl.playbackRate = speed;
+  audioEl.volume = 0.8;
+  audioEl.play();
+  playing = true;
   document.getElementById('pl-icon').textContent = ch.icon;
   document.getElementById('pl-title').textContent = ch.num+': '+ch.title;
-  document.getElementById('play-main').textContent = playing?'⏸':'▶';
+  document.getElementById('play-main').textContent = '⏸';
   document.getElementById('prog-fill').style.width = '0%';
   document.getElementById('cur-time').textContent = '0:00';
   document.getElementById('tot-time').textContent = '0:00';
@@ -428,26 +392,21 @@ function playChapter(ch){
 }
 
 function togglePlay(){
-  if(!currentChapter) return;
-  if(audioFiles[currentChapter.id]){
-    if(playing){audioEl.pause();}
-    else{audioEl.play();}
-    playing = !playing;
-  } else {
-    playing = false;
-  }
+  if(!currentChapter||!audioMap[currentChapter.id]) return;
+  if(playing){audioEl.pause();}else{audioEl.play();}
+  playing = !playing;
   document.getElementById('play-main').textContent = playing?'⏸':'▶';
   renderGrid('');
 }
 
 function skip(s){
-  if(audioFiles[currentChapter?.id]) audioEl.currentTime = Math.max(0,audioEl.currentTime+s);
+  if(audioMap[currentChapter?.id]) audioEl.currentTime = Math.max(0,audioEl.currentTime+s);
 }
 
 function seek(e){
   const bar = document.getElementById('prog-bar');
   const pct = Math.max(0,Math.min(1,e.offsetX/bar.offsetWidth));
-  if(audioFiles[currentChapter?.id]&&audioEl.duration) audioEl.currentTime = pct*audioEl.duration;
+  if(audioMap[currentChapter?.id]&&audioEl.duration) audioEl.currentTime = pct*audioEl.duration;
 }
 
 function cycleSpeed(){
@@ -476,7 +435,10 @@ audioEl.addEventListener('ended',()=>{
   playing=false;
   document.getElementById('play-main').textContent='▶';
   const idx=chapters.findIndex(c=>c.id===currentChapter?.id);
-  if(idx>=0&&idx<chapters.length-1) setTimeout(()=>playChapter(chapters[idx+1]),1500);
+  if(idx>=0&&idx<chapters.length-1){
+    const next=chapters[idx+1];
+    if(audioMap[next.id]) setTimeout(()=>playChapter(next),1500);
+  }
 });
 
 function filterChapters(v){renderGrid(v.toLowerCase());}
