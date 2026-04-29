@@ -1,5 +1,5 @@
-const CACHE_NAME = 'positively-geared-v3';
-const AUDIO_CACHE = 'positively-geared-audio-v3';
+const CACHE_NAME = 'positively-geared-v4';
+const AUDIO_CACHE = 'positively-geared-audio-v4';
 
 const SHELL_FILES = ['./', './index.html', './manifest.json'];
 
@@ -32,17 +32,24 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   const url = e.request.url;
-  const isAudio = AUDIO_FILES.some(f => url.includes(f));
+  const filename = AUDIO_FILES.find(f => url.includes(f));
 
-  if (isAudio) {
+  if (filename) {
     e.respondWith(
       caches.open(AUDIO_CACHE).then(async cache => {
-        const cached = await cache.match(e.request);
-        if (cached) return cached;
+        // Check cache by filename key (not the expiring URL)
+        const cacheKey = 'audio::' + filename;
+        const cached = await cache.match(cacheKey);
+        if (cached) {
+          return cached;
+        }
+        // Not cached — fetch from network
         try {
-          // Use no-cors for GitHub release assets
-          const response = await fetch(e.request, { mode: 'cors', credentials: 'omit' });
-          if (response.ok) cache.put(e.request, response.clone());
+          const response = await fetch(BASE + filename, { redirect: 'follow' });
+          if (response.ok) {
+            // Store with stable filename key so expiring URLs don't matter
+            await cache.put(cacheKey, response.clone());
+          }
           return response;
         } catch {
           return new Response('Audio not available offline yet', { status: 503 });
@@ -61,40 +68,41 @@ self.addEventListener('fetch', e => {
   }
 });
 
-self.addEventListener('message', e => {
+self.addEventListener('message', async e => {
   if (e.data?.type === 'DOWNLOAD_CHAPTER') {
-    const url = e.data.url;
-    caches.open(AUDIO_CACHE).then(async cache => {
-      const existing = await cache.match(url);
-      if (existing) {
-        notifyClients({ type: 'DOWNLOAD_DONE', url, alreadyCached: true });
-        return;
+    const filename = e.data.filename;
+    const url = BASE + filename;
+    const cacheKey = 'audio::' + filename;
+
+    const cache = await caches.open(AUDIO_CACHE);
+    const existing = await cache.match(cacheKey);
+    if (existing) {
+      notifyClients({ type: 'DOWNLOAD_DONE', filename, alreadyCached: true });
+      return;
+    }
+
+    try {
+      const response = await fetch(url, { redirect: 'follow' });
+      if (response.ok) {
+        await cache.put(cacheKey, response.clone());
+        notifyClients({ type: 'DOWNLOAD_DONE', filename });
+      } else {
+        notifyClients({ type: 'DOWNLOAD_ERROR', filename, status: response.status });
       }
-      try {
-        const response = await fetch(url, { mode: 'cors', credentials: 'omit' });
-        if (response.ok) {
-          await cache.put(url, response.clone());
-          notifyClients({ type: 'DOWNLOAD_DONE', url });
-        } else {
-          notifyClients({ type: 'DOWNLOAD_ERROR', url, status: response.status });
-        }
-      } catch(err) {
-        notifyClients({ type: 'DOWNLOAD_ERROR', url, error: err.message });
-      }
-    });
+    } catch(err) {
+      notifyClients({ type: 'DOWNLOAD_ERROR', filename, error: err.message });
+    }
   }
 
   if (e.data?.type === 'CHECK_ALL_CACHED') {
-    caches.open(AUDIO_CACHE).then(async cache => {
-      const results = {};
-      for (const f of AUDIO_FILES) {
-        const fullUrl = BASE + f;
-        const cached = await cache.match(fullUrl);
-        const chNum = f.match(/chapter_(\d+)/)[1];
-        results[chNum] = !!cached;
-      }
-      notifyClients({ type: 'CACHE_STATUS', results });
-    });
+    const cache = await caches.open(AUDIO_CACHE);
+    const results = {};
+    for (const f of AUDIO_FILES) {
+      const cached = await cache.match('audio::' + f);
+      const chNum = f.match(/chapter_(\d+)/)[1];
+      results[chNum] = !!cached;
+    }
+    notifyClients({ type: 'CACHE_STATUS', results });
   }
 });
 

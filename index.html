@@ -502,7 +502,8 @@ if ('serviceWorker' in navigator) {
         if (cachedChapters.size >= chapters.length) showDlAllDone();
       }
       if (e.data.type === 'DOWNLOAD_DONE') {
-        const chNum = e.data.url.match(/chapter_(\d+)/)?.[1];
+        const filename = e.data.filename;
+        const chNum = filename?.match(/chapter_(\d+)/)?.[1];
         if (chNum) {
           const id = parseInt(chNum);
           cachedChapters.add(id);
@@ -511,7 +512,8 @@ if ('serviceWorker' in navigator) {
         }
       }
       if (e.data.type === 'DOWNLOAD_ERROR') {
-        const chNum = e.data.url.match(/chapter_(\d+)/)?.[1];
+        const filename = e.data.filename;
+        const chNum = filename?.match(/chapter_(\d+)/)?.[1];
         if (chNum) updateDlBtnError(parseInt(chNum));
       }
     });
@@ -536,10 +538,9 @@ const cachedChapters = new Set();
 function cacheChapter(id) {
   const file = audioMap[id];
   if (!file) return;
-  const url = BASE_STREAM + file;
   if (navigator.serviceWorker?.controller) {
-    navigator.serviceWorker.controller.postMessage({ type: 'DOWNLOAD_CHAPTER', url });
-    updateDlBtnProgress(id, 0); // show loading state
+    navigator.serviceWorker.controller.postMessage({ type: 'DOWNLOAD_CHAPTER', filename: file });
+    updateDlBtnProgress(id, 0);
   }
 }
 
@@ -828,13 +829,13 @@ function downloadNextInQueue() {
   if (navigator.serviceWorker?.controller) {
     navigator.serviceWorker.controller.postMessage({
       type: 'DOWNLOAD_CHAPTER',
-      url: BASE_STREAM + audioMap[id]
+      filename: audioMap[id]
     });
   } else {
-    // Fallback: direct fetch into cache via fetch API
-    fetch(BASE_STREAM + audioMap[id])
-      .then(r => r.ok ? caches.open('positively-geared-audio-v2')
-        .then(cache => cache.put(BASE_STREAM + audioMap[id], r)) : null)
+    // Fallback: direct fetch
+    fetch(BASE_STREAM + audioMap[id], { redirect: 'follow' })
+      .then(r => r.ok ? caches.open('positively-geared-audio-v4')
+        .then(cache => cache.put('audio::' + audioMap[id], r)) : null)
       .then(() => {
         cachedChapters.add(id);
         updateDlBtn(id);
@@ -849,14 +850,14 @@ function downloadNextInQueue() {
 
 function handleDlAllMessage(e) {
   if (e.data.type === 'DOWNLOAD_DONE' || e.data.type === 'DOWNLOAD_ERROR') {
-    const chNum = e.data.url?.match(/chapter_(\d+)/)?.[1];
+    const filename = e.data.filename;
+    const chNum = filename?.match(/chapter_(\d+)/)?.[1];
     if (chNum) {
       const id = parseInt(chNum);
       if (e.data.type === 'DOWNLOAD_DONE') {
         cachedChapters.add(id);
         updateDlBtn(id);
       }
-      // Remove from queue and move to next
       dlAllQueue = dlAllQueue.filter(q => q !== id);
       dlAllDone = cachedChapters.size;
       updateDlAllProgress();
