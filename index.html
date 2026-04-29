@@ -543,62 +543,97 @@ const durMap = {
 };
 chapters.forEach(ch => { if(durMap[ch.id]) ch.dur = durMap[ch.id]; });
 
-// Install app button
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./sw.js').then(reg => {
-    console.log('SW registered');
+// ── INDEXEDDB AUDIO STORAGE ─────────────────────────────────────────────
+// Stores full MP3 blobs — works offline on Android APK + iOS PWA
 
-    // Listen for cache status replies from SW
-    navigator.serviceWorker.addEventListener('message', e => {
-      if (e.data.type === 'CACHE_STATUS') {
-        Object.entries(e.data.results).forEach(([id, cached]) => {
-          if (cached) {
-            cachedChapters.add(parseInt(id));
-            updateDlBtn(parseInt(id));
-          }
-        });
-        renderGrid('');
-        // If all chapters already cached, show done state immediately
-        if (cachedChapters.size >= chapters.length) showDlAllDone();
-      }
-      if (e.data.type === 'DOWNLOAD_DONE') {
-        const id = e.data.id;
-        if (id) {
-          cachedChapters.add(id);
-          updateDlBtn(id);
-          updateDlBtnProgress(id, 100);
-        }
-      }
-      if (e.data.type === 'DOWNLOAD_ERROR') {
-        const id = e.data.id;
-        if (id) updateDlBtnError(id);
-      }
-    });
+const DB_NAME = 'pg-audio';
+const DB_STORE = 'chapters';
+let db = null;
 
-    // Ask SW which chapters are already cached
-    if (navigator.serviceWorker.controller) {
-      navigator.serviceWorker.controller.postMessage({ type: 'CHECK_ALL_CACHED' });
-    } else {
-      reg.addEventListener('updatefound', () => {
-        reg.installing?.addEventListener('statechange', () => {
-          if (navigator.serviceWorker.controller) {
-            navigator.serviceWorker.controller.postMessage({ type: 'CHECK_ALL_CACHED' });
-          }
-        });
-      });
-    }
+function openDB() {
+  return new Promise((res, rej) => {
+    if (db) return res(db);
+    const req = indexedDB.open(DB_NAME, 1);
+    req.onupgradeneeded = e => e.target.result.createObjectStore(DB_STORE);
+    req.onsuccess = e => { db = e.target.result; res(db); };
+    req.onerror = () => rej(req.error);
   });
 }
 
+async function saveAudioBlob(id, blob) {
+  const d = await openDB();
+  return new Promise((res, rej) => {
+    const tx = d.transaction(DB_STORE, 'readwrite');
+    tx.objectStore(DB_STORE).put(blob, id);
+    tx.oncomplete = res;
+    tx.onerror = () => rej(tx.error);
+  });
+}
+
+async function getAudioBlob(id) {
+  const d = await openDB();
+  return new Promise((res, rej) => {
+    const tx = d.transaction(DB_STORE, 'readonly');
+    const req = tx.objectStore(DB_STORE).get(id);
+    req.onsuccess = () => res(req.result || null);
+    req.onerror = () => res(null);
+  });
+}
+
+// Check which chapters are saved on load
+async function checkAllCached() {
+  for (const ch of chapters) {
+    try {
+      const blob = await getAudioBlob(ch.id);
+      if (blob && blob.size > 0) {
+        cachedChapters.add(ch.id);
+        updateDlBtn(ch.id);
+      }
+    } catch(e) {}
+  }
+  if (cachedChapters.size >= chapters.length) showDlAllDone();
+  renderGrid('');
+}
+
+// Download chapter and store as blob in IndexedDB
+async function downloadChapter(id) {
+  const url = audioMap[id];
+  if (!url) return false;
+  updateDlBtnProgress(id, 0);
+  try {
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const blob = await resp.blob();
+    await saveAudioBlob(id, blob);
+    cachedChapters.add(id);
+    updateDlBtn(id);
+    return true;
+  } catch(e) {
+    console.error('Download failed ch' + id, e);
+    updateDlBtnError(id);
+    return false;
+  }
+}
+
+// Get blob:// URL if cached, otherwise stream directly
+async function getPlaybackUrl(id) {
+  try {
+    const blob = await getAudioBlob(id);
+    if (blob && blob.size > 0) return URL.createObjectURL(blob);
+  } catch(e) {}
+  return audioMap[id];
+}
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(() => {});
+}
+
 const cachedChapters = new Set();
+checkAllCached();
 
 function cacheChapter(id) {
-  const url = audioMap[id];
-  if (!url) return;
-  if (navigator.serviceWorker?.controller) {
-    navigator.serviceWorker.controller.postMessage({ type: 'DOWNLOAD_CHAPTER', url, id });
-    updateDlBtnProgress(id, 0);
-  }
+  if (cachedChapters.has(id)) return;
+  downloadChapter(id);
 }
 
 function updateDlBtn(id) {
@@ -628,7 +663,6 @@ function updateDlBtnError(id) {
     btn.style.background = '#c0392b';
     btn.title = 'Download failed — tap to retry';
     btn.style.cursor = 'pointer';
-    // Re-enable click to retry
     btn.onclick = (e) => { e.stopPropagation(); cacheChapter(id); };
   }
 }
@@ -685,60 +719,57 @@ function playChapter(ch, startAt){
   if(currentChapter && currentChapter.id===ch.id && startAt===0){togglePlay();return;}
   currentChapter = ch;
 
-  // Clear all previous listeners
   audioEl.oncanplay = null;
-  audioEl.onseeked = null;
   audioEl.onstalled = null;
+  audioEl.onwaiting = null;
+  audioEl.onplaying = null;
   audioEl.onerror = null;
-
-  const src = audioMap[ch.id];
-  audioEl.src = src;
-  audioEl.preload = 'auto';
-  audioEl.playbackRate = speed;
-  audioEl.volume = 0.8;
-
-  // Show loading state
-  document.getElementById('play-main').textContent = '⏳';
-
-  audioEl.oncanplay = function(){
-    audioEl.oncanplay = null;
-    if(startAt > 0){
-      audioEl.currentTime = startAt;
-      // After seek completes, play
-      audioEl.onseeked = function(){
-        audioEl.onseeked = null;
-        audioEl.play().catch(()=>{});
-      };
-    } else {
-      audioEl.play().catch(()=>{});
-    }
-    document.getElementById('play-main').textContent = '⏸';
-  };
-
-  // If stalled (slow connection), keep waiting — don't break
-  audioEl.onstalled = function(){
-    document.getElementById('play-main').textContent = '⏳';
-  };
-  audioEl.onwaiting = function(){
-    document.getElementById('play-main').textContent = '⏳';
-  };
-  audioEl.onplaying = function(){
-    document.getElementById('play-main').textContent = '⏸';
-  };
-  audioEl.onerror = function(){
-    document.getElementById('play-main').textContent = '▶';
-    playing = false;
-  };
-
-  audioEl.load();
 
   playing = true;
   document.getElementById('pl-icon').textContent = ch.icon;
   document.getElementById('pl-title').textContent = ch.num+': '+ch.title;
+  document.getElementById('play-main').textContent = '⏳';
   document.getElementById('prog-fill').style.width = '0%';
   document.getElementById('cur-time').textContent = startAt > 0 ? fmtTime(startAt) : '0:00';
   document.getElementById('tot-time').textContent = ch.dur || '0:00';
   renderGrid('');
+
+  // Get blob:// URL if cached, otherwise stream
+  getPlaybackUrl(ch.id).then(src => {
+    // Revoke previous blob URL to free memory
+    if(audioEl._blobUrl){ URL.revokeObjectURL(audioEl._blobUrl); audioEl._blobUrl = null; }
+    if(src.startsWith('blob:')) audioEl._blobUrl = src;
+
+    audioEl.src = src;
+    audioEl.preload = 'auto';
+    audioEl.playbackRate = speed;
+    audioEl.volume = 0.8;
+
+    audioEl.oncanplay = function(){
+      audioEl.oncanplay = null;
+      if(startAt > 0){
+        audioEl.currentTime = startAt;
+        audioEl.onseeked = function(){
+          audioEl.onseeked = null;
+          audioEl.play().catch(()=>{});
+        };
+      } else {
+        audioEl.play().catch(()=>{});
+      }
+      document.getElementById('play-main').textContent = '⏸';
+    };
+    audioEl.onstalled = audioEl.onwaiting = function(){
+      document.getElementById('play-main').textContent = '⏳';
+    };
+    audioEl.onplaying = function(){
+      document.getElementById('play-main').textContent = '⏸';
+    };
+    audioEl.onerror = function(){
+      document.getElementById('play-main').textContent = '▶';
+      playing = false;
+    };
+    audioEl.load();
+  });
 }
 
 function prevChapter(){
@@ -924,59 +955,22 @@ function downloadAll() {
   document.getElementById('dl-all-progress').style.display = 'block';
   updateDlAllProgress();
 
-  // Register SW message listener for this batch
-  if (navigator.serviceWorker) {
-    navigator.serviceWorker.addEventListener('message', handleDlAllMessage);
-  }
-
-  // Kick off first download
+  // Register SW message listener for this batch — not needed with IndexedDB
   downloadNextInQueue();
 }
 
 function downloadNextInQueue() {
   if (dlAllQueue.length === 0) { showDlAllDone(); return; }
-
   const id = dlAllQueue[0];
   const ch = chapters.find(c => c.id === id);
-  document.getElementById('dl-all-label').textContent =
-    'Downloading ' + ch.num + ': ' + ch.title + '...';
+  document.getElementById('dl-all-label').textContent = 'Downloading ' + ch.num + ': ' + ch.title + '...';
 
-  if (navigator.serviceWorker?.controller) {
-    navigator.serviceWorker.controller.postMessage({
-      type: 'DOWNLOAD_CHAPTER',
-      url: audioMap[id],
-      id
-    });
-  } else {
-    fetch(audioMap[id], { redirect: 'follow' })
-      .then(r => r.ok ? caches.open('positively-geared-audio-v4')
-        .then(cache => cache.put('audio::' + id, r)) : null)
-      .then(() => {
-        cachedChapters.add(id);
-        updateDlBtn(id);
-        dlAllQueue.shift();
-        dlAllDone++;
-        updateDlAllProgress();
-        downloadNextInQueue();
-      })
-      .catch(() => { dlAllQueue.shift(); downloadNextInQueue(); });
-  }
-}
-
-function handleDlAllMessage(e) {
-  if (e.data.type === 'DOWNLOAD_DONE' || e.data.type === 'DOWNLOAD_ERROR') {
-    const id = e.data.id;
-    if (id) {
-      if (e.data.type === 'DOWNLOAD_DONE') {
-        cachedChapters.add(id);
-        updateDlBtn(id);
-      }
-      dlAllQueue = dlAllQueue.filter(q => q !== id);
-      dlAllDone = cachedChapters.size;
-      updateDlAllProgress();
-      downloadNextInQueue();
-    }
-  }
+  downloadChapter(id).then(success => {
+    dlAllQueue.shift();
+    if (success) dlAllDone = cachedChapters.size;
+    updateDlAllProgress();
+    downloadNextInQueue();
+  });
 }
 
 function updateDlAllProgress() {
