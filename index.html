@@ -342,7 +342,7 @@ footer{background:var(--purple-mid);border-top:1px solid var(--border);padding:2
         <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.3rem">Buyer's Agent</div>
       </div>
       <div style="background:var(--purple-mid);border:1px solid var(--border);border-radius:var(--radius);padding:1.2rem;text-align:center">
-        <div style="font-family:Georgia,serif;font-size:1.8rem;color:var(--gold)">$M+</div>
+        <div style="font-family:Georgia,serif;font-size:1.8rem;color:var(--gold)">$25M+</div>
         <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.3rem">Portfolio value</div>
       </div>
       <div style="background:var(--purple-mid);border:1px solid var(--border);border-radius:var(--radius);padding:1.2rem;text-align:center">
@@ -490,8 +490,9 @@ function cacheChapter(id){
 function updateDlBtn(id){
   const btn = document.getElementById('dl-btn-'+id);
   if(btn && cachedChapters.has(id)){
-    btn.textContent = '✓';
-    btn.style.background = 'var(--purple-accent)';
+    btn.innerHTML = '✅';
+    btn.style.background = '#1d9040';
+    btn.style.boxShadow = '0 2px 8px rgba(29,144,64,0.5)';
     btn.title = 'Saved for offline listening';
   }
 }
@@ -531,7 +532,7 @@ function renderGrid(search){
           <span>${ch.dur ? ch.dur : (hasAudio ? 'Listen now' : 'Coming soon')}</span>
         </div>
         <div style="display:flex;align-items:center;gap:0.5rem">
-          ${dlUrl ? `<a href="${dlUrl}" download="Positively_Geared_${ch.num.replace(' ','_')}.mp3" onclick="event.stopPropagation();cacheChapter(${ch.id})" title="Download for offline listening" id="dl-btn-${ch.id}" style="width:30px;height:30px;border-radius:50%;background:var(--border);display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:0.8rem;transition:background 0.2s;flex-shrink:0" onmouseover="this.style.background='var(--purple-accent)'" onmouseout="this.style.background=cachedChapters.has(${ch.id})?'var(--purple-accent)':'var(--border)'">⬇</a>` : ''}
+          ${dlUrl ? `<a href="${dlUrl}" download="Positively_Geared_${ch.num.replace(' ','_')}.mp3" onclick="event.stopPropagation();cacheChapter(${ch.id})" title="Download for offline listening" id="dl-btn-${ch.id}" style="width:36px;height:36px;border-radius:50%;background:#22a84a;display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:1rem;transition:all 0.2s;flex-shrink:0;box-shadow:0 2px 8px rgba(34,168,74,0.4)" onmouseover="this.style.background='#1d9040';this.style.transform='scale(1.1)'" onmouseout="this.style.background=cachedChapters.has(${ch.id})?'#1d9040':'#22a84a';this.style.transform='scale(1)'">&#x2B07;&#xFE0F;</a>` : ''}
           <button class="chapter-play" style="${!hasAudio?'opacity:0.35;cursor:not-allowed':''}" onclick="event.stopPropagation();${hasAudio?`playChapter(chapters.find(c=>c.id==${ch.id}))`:''}">
             ${isCurrent&&playing?'⏸':'▶'}
           </button>
