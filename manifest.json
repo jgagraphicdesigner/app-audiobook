@@ -1,14 +1,14 @@
 {
   "name": "Positively Geared Audiobook",
   "short_name": "Pos. Geared",
-  "description": "Positively Geared by Lloyd Edge — Aus Property Professionals Audiobook",
-  "start_url": "/",
-  "scope": "/",
+  "description": "Positively Geared by Lloyd Edge — Aus Property Professionals",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#1a0a2e",
   "theme_color": "#1a0a2e",
   "orientation": "portrait-primary",
-  "categories": ["education", "books", "entertainment"],
+  "categories": ["education", "books"],
   "icons": [
     {
       "src": "./icons/icon-192.png",
@@ -21,13 +21,6 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
-    }
-  ],
-  "shortcuts": [
-    {
-      "name": "Chapter 1 — Know Your Why",
-      "url": "/?chapter=1",
-      "description": "Jump straight to Chapter 1"
     }
   ]
 }

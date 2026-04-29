@@ -602,23 +602,51 @@ async function checkAllCached() {
   renderGrid('');
 }
 
+// Request persistent storage on iOS/Android so files survive Safari cleanup
+async function requestPersistentStorage() {
+  if (navigator.storage && navigator.storage.persist) {
+    const granted = await navigator.storage.persist();
+    console.log('Persistent storage:', granted ? 'granted' : 'denied');
+  }
+}
+requestPersistentStorage();
+
 // Download chapter and store as blob in IndexedDB
 async function downloadChapter(id) {
   const url = audioMap[id];
   if (!url) return false;
   updateDlBtnProgress(id, 0);
   try {
-    const resp = await fetch(url);
-    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    // iOS Safari needs explicit mode:'cors' and no-cache to avoid CORS issues
+    const resp = await fetch(url, {
+      method: 'GET',
+      mode: 'cors',
+      cache: 'no-store',
+      headers: { 'Range': 'bytes=0-' }
+    });
+    if (!resp.ok && resp.status !== 206) throw new Error('HTTP ' + resp.status);
     const blob = await resp.blob();
+    if (!blob || blob.size < 1000) throw new Error('Empty blob');
     await saveAudioBlob(id, blob);
     cachedChapters.add(id);
     updateDlBtn(id);
     return true;
   } catch(e) {
-    console.error('Download failed ch' + id, e);
-    updateDlBtnError(id);
-    return false;
+    // Retry without Range header (some servers don't support it)
+    try {
+      const resp2 = await fetch(url, { mode: 'cors', cache: 'no-store' });
+      if (!resp2.ok) throw new Error('HTTP ' + resp2.status);
+      const blob2 = await resp2.blob();
+      if (!blob2 || blob2.size < 1000) throw new Error('Empty blob');
+      await saveAudioBlob(id, blob2);
+      cachedChapters.add(id);
+      updateDlBtn(id);
+      return true;
+    } catch(e2) {
+      console.error('Download failed ch' + id, e2);
+      updateDlBtnError(id);
+      return false;
+    }
   }
 }
 
@@ -626,9 +654,15 @@ async function downloadChapter(id) {
 async function getPlaybackUrl(id) {
   try {
     const blob = await getAudioBlob(id);
-    if (blob && blob.size > 0) return URL.createObjectURL(blob);
-  } catch(e) {}
-  return audioMap[id];
+    if (blob && blob.size > 1000) {
+      // iOS Safari requires audio/mpeg type explicitly
+      const typedBlob = new Blob([blob], { type: 'audio/mpeg' });
+      return URL.createObjectURL(typedBlob);
+    }
+  } catch(e) {
+    console.warn('IndexedDB read failed, streaming:', e);
+  }
+  return audioMap[id]; // fallback to streaming
 }
 
 if ('serviceWorker' in navigator) {
