@@ -615,21 +615,38 @@ function renderGrid(search){
   }).join('');
 }
 
-function playChapter(ch){
+function playChapter(ch, startAt){
+  startAt = startAt || 0;
   if(!audioMap[ch.id]) return;
-  if(currentChapter && currentChapter.id===ch.id){togglePlay();return;}
+  if(currentChapter && currentChapter.id===ch.id && startAt===0){togglePlay();return;}
   currentChapter = ch;
+
+  // Remove any stale seek listeners
+  audioEl.oncanplay = null;
+
   audioEl.src = getStreamUrl(ch);
   audioEl.playbackRate = speed;
   audioEl.volume = 0.8;
-  audioEl.play();
+  audioEl.load();
+
+  if(startAt > 0){
+    // Wait until audio is seekable, then jump to position and play
+    audioEl.oncanplay = function(){
+      audioEl.oncanplay = null;
+      audioEl.currentTime = startAt;
+      audioEl.play().catch(()=>{});
+    };
+  } else {
+    audioEl.play().catch(()=>{});
+  }
+
   playing = true;
   document.getElementById('pl-icon').textContent = ch.icon;
   document.getElementById('pl-title').textContent = ch.num+': '+ch.title;
   document.getElementById('play-main').textContent = '⏸';
   document.getElementById('prog-fill').style.width = '0%';
-  document.getElementById('cur-time').textContent = '0:00';
-  document.getElementById('tot-time').textContent = '0:00';
+  document.getElementById('cur-time').textContent = startAt > 0 ? fmtTime(startAt) : '0:00';
+  document.getElementById('tot-time').textContent = ch.dur || '0:00';
   renderGrid('');
 }
 
@@ -676,6 +693,8 @@ audioEl.addEventListener('loadedmetadata',()=>{
 audioEl.addEventListener('ended',()=>{
   playing=false;
   document.getElementById('play-main').textContent='▶';
+  // Clear saved position — chapter finished
+  savePosition(currentChapter?.id, 0);
   const idx=chapters.findIndex(c=>c.id===currentChapter?.id);
   if(idx>=0&&idx<chapters.length-1){
     const next=chapters[idx+1];
@@ -690,43 +709,53 @@ function filterChapters(v){renderGrid(v.toLowerCase());}
 let resumeChapterId = -1;
 let resumePosition = 0;
 
-// Called by Android native bridge when app opens with saved state
+// Central save function — called every second while playing
+function savePosition(chapterId, posSeconds) {
+  if(!chapterId) return;
+  try {
+    if(posSeconds > 5){
+      localStorage.setItem('pg_resume', JSON.stringify({chapter: chapterId, position: posSeconds}));
+      if(window.AndroidBridge) AndroidBridge.savePlaybackPosition(chapterId, posSeconds);
+    } else {
+      localStorage.removeItem('pg_resume');
+      if(window.AndroidBridge) AndroidBridge.clearPlaybackPosition();
+    }
+  } catch(e){}
+}
+
+// Save every 1 second while playing
+setInterval(()=>{
+  if(!currentChapter || !playing || !audioEl.currentTime) return;
+  savePosition(currentChapter.id, Math.floor(audioEl.currentTime));
+}, 1000);
+
+// Show resume banner
 window.showResumePrompt = function(chapterId, positionSeconds) {
   const ch = chapters.find(c => c.id === chapterId);
-  if (!ch) return;
+  if(!ch || positionSeconds < 5) return;
   resumeChapterId = chapterId;
   resumePosition = positionSeconds;
-
-  const mins = Math.floor(positionSeconds / 60);
-  const secs = positionSeconds % 60;
-  const timeStr = mins + ':' + String(secs).padStart(2, '0');
-
   document.getElementById('resume-title').textContent = ch.num + ': ' + ch.title;
-  document.getElementById('resume-time').textContent = 'Paused at ' + timeStr + ' of ' + (ch.dur || '');
+  document.getElementById('resume-time').textContent = 'You stopped at ' + fmtTime(positionSeconds) + (ch.dur ? ' of ' + ch.dur : '');
   document.getElementById('resume-banner').style.display = 'flex';
 };
 
-// Also check localStorage for web-only resume (non-Android)
+// Check localStorage on web load
 function checkLocalResume() {
-  if (window.AndroidBridge) return; // Android handles it natively
+  if(window.AndroidBridge) return;
   try {
     const saved = JSON.parse(localStorage.getItem('pg_resume') || '{}');
-    if (saved.chapter && saved.position > 10) {
-      window.showResumePrompt(saved.chapter, saved.position);
-    }
-  } catch(e) {}
+    if(saved.chapter && saved.position > 5) window.showResumePrompt(saved.chapter, saved.position);
+  } catch(e){}
 }
 
+// Resume — passes exact timestamp into playChapter
 function resumePlayback() {
   const ch = chapters.find(c => c.id === resumeChapterId);
-  if (!ch) return;
+  const pos = resumePosition;
+  if(!ch) return;
   dismissResume();
-  playChapter(ch);
-  // Seek after audio loads
-  audioEl.addEventListener('loadedmetadata', function seekOnce() {
-    audioEl.currentTime = resumePosition;
-    audioEl.removeEventListener('loadedmetadata', seekOnce);
-  });
+  playChapter(ch, pos);
 }
 
 function dismissResume() {
@@ -735,35 +764,7 @@ function dismissResume() {
   resumePosition = 0;
 }
 
-// Save position every 5 seconds while playing
-setInterval(() => {
-  if (!currentChapter || !playing || !audioEl.currentTime) return;
-  const pos = Math.floor(audioEl.currentTime);
-  if (pos < 5) return;
-  // Save to Android bridge
-  if (window.AndroidBridge) {
-    AndroidBridge.savePlaybackPosition(currentChapter.id, pos);
-  }
-  // Save to localStorage for web
-  try {
-    localStorage.setItem('pg_resume', JSON.stringify({chapter: currentChapter.id, position: pos}));
-  } catch(e) {}
-}, 5000);
-
-// Clear position when chapter finishes
-audioEl.addEventListener('ended', () => {
-  if (window.AndroidBridge) AndroidBridge.clearPlaybackPosition();
-  try { localStorage.removeItem('pg_resume'); } catch(e) {}
-});
-
-// Check for saved position on load
-setTimeout(checkLocalResume, 1000);
-
-// Show offline tip banner after 2 seconds
-setTimeout(() => {
-  const banner = document.getElementById('offline-banner');
-  if (banner) banner.style.display = 'block';
-}, 2000);
+setTimeout(checkLocalResume, 800);
 
 // ── DOWNLOAD ALL ────────────────────────────────────────────────────────
 let dlAllQueue = [];
