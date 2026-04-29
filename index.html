@@ -284,10 +284,54 @@ footer{background:var(--purple-mid);border-top:1px solid var(--border);padding:2
   <div class="section-header">
     <div class="section-title">Chapters</div>
   </div>
-  <div style="height:1.5rem"></div>
 
-  <!-- Resume Banner (shown when returning to app mid-chapter) -->
-  <div id="resume-banner" style="display:none;background:linear-gradient(135deg,#1e2d1a,#162414);border:1px solid #2a4a2a;border-radius:var(--radius);padding:1rem 1.4rem;margin-bottom:1rem;display:none;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.8rem">
+  <!-- ONE-TAP DOWNLOAD ALL BANNER -->
+  <div id="download-all-banner" style="background:linear-gradient(135deg,#1a2d1a,#0f1f0f);border:1.5px solid #2a5a2a;border-radius:var(--radius);padding:1.2rem 1.4rem;margin-bottom:1.4rem">
+
+    <!-- Default state: prompt to download -->
+    <div id="dl-all-idle" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem">
+      <div style="display:flex;align-items:center;gap:1rem">
+        <div style="width:44px;height:44px;border-radius:50%;background:#22a84a;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 4px 14px rgba(34,168,74,0.4)">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 3v10M6 9l4 4 4-4M3 16h14" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div>
+          <div style="font-size:0.95rem;font-weight:700;color:var(--white)">Listen offline — no internet needed</div>
+          <div style="font-size:0.78rem;color:#7dc97d;margin-top:0.2rem">Tap once to download all 11 chapters to your device</div>
+        </div>
+      </div>
+      <button onclick="downloadAll()" id="dl-all-btn" style="background:#22a84a;color:#fff;border:none;border-radius:8px;padding:0.75rem 1.6rem;font-size:0.9rem;font-weight:700;cursor:pointer;font-family:'Lato',sans-serif;display:flex;align-items:center;gap:0.6rem;white-space:nowrap;box-shadow:0 4px 14px rgba(34,168,74,0.35);transition:all 0.2s" onmouseover="this.style.background='#1a9040'" onmouseout="this.style.background='#22a84a'">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2v8M5 7l3 3 3-3M2 13h12" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Download All
+      </button>
+    </div>
+
+    <!-- Downloading state: progress bar -->
+    <div id="dl-all-progress" style="display:none">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.8rem">
+        <div style="font-size:0.88rem;font-weight:700;color:var(--white)" id="dl-all-label">Downloading Chapter 1...</div>
+        <div style="font-size:0.82rem;color:#7dc97d;font-weight:600" id="dl-all-count">0 / 11</div>
+      </div>
+      <div style="height:6px;background:#1a3a1a;border-radius:3px;overflow:hidden">
+        <div id="dl-all-bar" style="height:100%;background:linear-gradient(90deg,#22a84a,#4dd877);border-radius:3px;width:0%;transition:width 0.4s ease"></div>
+      </div>
+      <div style="font-size:0.72rem;color:#5a9a5a;margin-top:0.5rem" id="dl-all-sub">Please keep this page open while downloading</div>
+    </div>
+
+    <!-- Done state -->
+    <div id="dl-all-done" style="display:none;align-items:center;gap:1rem">
+      <div style="width:44px;height:44px;border-radius:50%;background:#1a9040;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M4 11l5 5L18 6" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div>
+        <div style="font-size:0.95rem;font-weight:700;color:var(--white)">All 11 chapters saved!</div>
+        <div style="font-size:0.78rem;color:#7dc97d;margin-top:0.2rem">You can now listen to any chapter without internet</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Resume Banner -->
+  <div id="resume-banner" style="display:none;background:linear-gradient(135deg,#1e2d1a,#162414);border:1px solid #2a4a2a;border-radius:var(--radius);padding:1rem 1.4rem;margin-bottom:1rem;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.8rem">
     <div style="display:flex;align-items:center;gap:0.9rem">
       <span style="font-size:1.4rem">▶️</span>
       <div>
@@ -301,20 +345,6 @@ footer{background:var(--purple-mid);border-top:1px solid var(--border);padding:2
         Resume
       </button>
       <button onclick="dismissResume()" style="background:transparent;border:none;color:var(--text-muted);cursor:pointer;font-size:1.2rem;line-height:1">✕</button>
-    </div>
-  </div>
-
-  <!-- Offline / Install Banner -->
-  <div id="offline-banner" style="display:none;background:linear-gradient(135deg,#1a2a1a,#162414);border:1px solid #2a4a2a;border-radius:var(--radius);padding:1rem 1.4rem;margin-bottom:1.4rem">
-    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.8rem">
-      <div style="display:flex;align-items:center;gap:0.9rem">
-        <span style="font-size:1.4rem">📶</span>
-        <div>
-          <div style="font-size:0.88rem;font-weight:700;color:var(--white)">Listen without internet</div>
-          <div style="font-size:0.75rem;color:#7dc97d;margin-top:0.15rem">Tap ⬇ on any chapter to save it for offline listening</div>
-        </div>
-      </div>
-      <button onclick="document.getElementById('offline-banner').style.display='none'" style="background:transparent;border:none;color:var(--text-muted);cursor:pointer;font-size:1.2rem;line-height:1">✕</button>
     </div>
   </div>
 
@@ -462,6 +492,8 @@ if ('serviceWorker' in navigator) {
           }
         });
         renderGrid('');
+        // If all chapters already cached, show done state immediately
+        if (cachedChapters.size >= chapters.length) showDlAllDone();
       }
       if (e.data.type === 'DOWNLOAD_DONE') {
         const chNum = e.data.url.match(/chapter_(\d+)/)?.[1];
@@ -732,6 +764,104 @@ setTimeout(() => {
   const banner = document.getElementById('offline-banner');
   if (banner) banner.style.display = 'block';
 }, 2000);
+
+// ── DOWNLOAD ALL ────────────────────────────────────────────────────────
+let dlAllQueue = [];
+let dlAllDone = 0;
+
+function downloadAll() {
+  // If all already cached, show done immediately
+  if (cachedChapters.size >= chapters.length) {
+    showDlAllDone();
+    return;
+  }
+
+  // Build queue of chapters not yet cached
+  dlAllQueue = chapters
+    .filter(ch => audioMap[ch.id] && !cachedChapters.has(ch.id))
+    .map(ch => ch.id);
+  dlAllDone = cachedChapters.size;
+
+  if (dlAllQueue.length === 0) { showDlAllDone(); return; }
+
+  // Switch to progress state
+  document.getElementById('dl-all-idle').style.display = 'none';
+  document.getElementById('dl-all-progress').style.display = 'block';
+  updateDlAllProgress();
+
+  // Register SW message listener for this batch
+  if (navigator.serviceWorker) {
+    navigator.serviceWorker.addEventListener('message', handleDlAllMessage);
+  }
+
+  // Kick off first download
+  downloadNextInQueue();
+}
+
+function downloadNextInQueue() {
+  if (dlAllQueue.length === 0) { showDlAllDone(); return; }
+
+  const id = dlAllQueue[0];
+  const ch = chapters.find(c => c.id === id);
+  document.getElementById('dl-all-label').textContent =
+    'Downloading ' + ch.num + ': ' + ch.title + '...';
+
+  if (navigator.serviceWorker?.controller) {
+    navigator.serviceWorker.controller.postMessage({
+      type: 'DOWNLOAD_CHAPTER',
+      url: BASE_STREAM + audioMap[id]
+    });
+  } else {
+    // Fallback: direct fetch into cache via fetch API
+    fetch(BASE_STREAM + audioMap[id])
+      .then(r => r.ok ? caches.open('positively-geared-audio-v2')
+        .then(cache => cache.put(BASE_STREAM + audioMap[id], r)) : null)
+      .then(() => {
+        cachedChapters.add(id);
+        updateDlBtn(id);
+        dlAllQueue.shift();
+        dlAllDone++;
+        updateDlAllProgress();
+        downloadNextInQueue();
+      })
+      .catch(() => { dlAllQueue.shift(); downloadNextInQueue(); });
+  }
+}
+
+function handleDlAllMessage(e) {
+  if (e.data.type === 'DOWNLOAD_DONE' || e.data.type === 'DOWNLOAD_ERROR') {
+    const chNum = e.data.url?.match(/chapter_(\d+)/)?.[1];
+    if (chNum) {
+      const id = parseInt(chNum);
+      if (e.data.type === 'DOWNLOAD_DONE') {
+        cachedChapters.add(id);
+        updateDlBtn(id);
+      }
+      // Remove from queue and move to next
+      dlAllQueue = dlAllQueue.filter(q => q !== id);
+      dlAllDone = cachedChapters.size;
+      updateDlAllProgress();
+      downloadNextInQueue();
+    }
+  }
+}
+
+function updateDlAllProgress() {
+  const total = chapters.length;
+  const pct = Math.round((dlAllDone / total) * 100);
+  document.getElementById('dl-all-bar').style.width = pct + '%';
+  document.getElementById('dl-all-count').textContent = dlAllDone + ' / ' + total;
+}
+
+function showDlAllDone() {
+  if (navigator.serviceWorker) {
+    navigator.serviceWorker.removeEventListener('message', handleDlAllMessage);
+  }
+  document.getElementById('dl-all-idle').style.display = 'none';
+  document.getElementById('dl-all-progress').style.display = 'none';
+  document.getElementById('dl-all-done').style.display = 'flex';
+  renderGrid('');
+}
 
 renderGrid('');
 </script>
