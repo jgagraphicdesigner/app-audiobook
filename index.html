@@ -625,29 +625,56 @@ function playChapter(ch, startAt){
   if(currentChapter && currentChapter.id===ch.id && startAt===0){togglePlay();return;}
   currentChapter = ch;
 
+  // Clear all previous listeners
   audioEl.oncanplay = null;
+  audioEl.onseeked = null;
+  audioEl.onstalled = null;
+  audioEl.onerror = null;
 
-  // Set src directly from audioMap (full Google Drive URL)
-  audioEl.src = audioMap[ch.id];
+  const src = audioMap[ch.id];
+  audioEl.src = src;
+  audioEl.preload = 'auto';
   audioEl.playbackRate = speed;
   audioEl.volume = 0.8;
 
-  if(startAt > 0){
-    audioEl.oncanplay = function(){
-      audioEl.oncanplay = null;
+  // Show loading state
+  document.getElementById('play-main').textContent = '⏳';
+
+  audioEl.oncanplay = function(){
+    audioEl.oncanplay = null;
+    if(startAt > 0){
       audioEl.currentTime = startAt;
+      // After seek completes, play
+      audioEl.onseeked = function(){
+        audioEl.onseeked = null;
+        audioEl.play().catch(()=>{});
+      };
+    } else {
       audioEl.play().catch(()=>{});
-    };
-    audioEl.load();
-  } else {
-    audioEl.load();
-    audioEl.play().catch(()=>{});
-  }
+    }
+    document.getElementById('play-main').textContent = '⏸';
+  };
+
+  // If stalled (slow connection), keep waiting — don't break
+  audioEl.onstalled = function(){
+    document.getElementById('play-main').textContent = '⏳';
+  };
+  audioEl.onwaiting = function(){
+    document.getElementById('play-main').textContent = '⏳';
+  };
+  audioEl.onplaying = function(){
+    document.getElementById('play-main').textContent = '⏸';
+  };
+  audioEl.onerror = function(){
+    document.getElementById('play-main').textContent = '▶';
+    playing = false;
+  };
+
+  audioEl.load();
 
   playing = true;
   document.getElementById('pl-icon').textContent = ch.icon;
   document.getElementById('pl-title').textContent = ch.num+': '+ch.title;
-  document.getElementById('play-main').textContent = '⏸';
   document.getElementById('prog-fill').style.width = '0%';
   document.getElementById('cur-time').textContent = startAt > 0 ? fmtTime(startAt) : '0:00';
   document.getElementById('tot-time').textContent = ch.dur || '0:00';
@@ -668,20 +695,51 @@ function nextChapter(){
 
 function togglePlay(){
   if(!currentChapter||!audioMap[currentChapter.id]) return;
-  if(playing){audioEl.pause();}else{audioEl.play();}
-  playing = !playing;
-  document.getElementById('play-main').textContent = playing?'⏸':'▶';
+  if(playing){
+    audioEl.pause();
+    playing = false;
+    document.getElementById('play-main').textContent = '▶';
+  } else {
+    audioEl.play().catch(()=>{});
+    playing = true;
+    document.getElementById('play-main').textContent = '⏸';
+  }
   renderGrid('');
 }
 
 function skip(s){
-  if(audioMap[currentChapter?.id]) audioEl.currentTime = Math.max(0,audioEl.currentTime+s);
+  if(!currentChapter || !audioMap[currentChapter.id]) return;
+  const newTime = Math.max(0, Math.min(audioEl.duration || 0, audioEl.currentTime + s));
+  // Show buffering while seeking
+  document.getElementById('play-main').textContent = '⏳';
+  audioEl.currentTime = newTime;
+  audioEl.onseeked = function(){
+    audioEl.onseeked = null;
+    if(playing) {
+      audioEl.play().catch(()=>{});
+      document.getElementById('play-main').textContent = '⏸';
+    } else {
+      document.getElementById('play-main').textContent = '▶';
+    }
+  };
 }
 
 function seek(e){
+  if(!currentChapter || !audioMap[currentChapter.id] || !audioEl.duration) return;
   const bar = document.getElementById('prog-bar');
-  const pct = Math.max(0,Math.min(1,e.offsetX/bar.offsetWidth));
-  if(audioMap[currentChapter?.id]&&audioEl.duration) audioEl.currentTime = pct*audioEl.duration;
+  const pct = Math.max(0, Math.min(1, e.offsetX / bar.offsetWidth));
+  const newTime = pct * audioEl.duration;
+  document.getElementById('play-main').textContent = '⏳';
+  audioEl.currentTime = newTime;
+  audioEl.onseeked = function(){
+    audioEl.onseeked = null;
+    if(playing){
+      audioEl.play().catch(()=>{});
+      document.getElementById('play-main').textContent = '⏸';
+    } else {
+      document.getElementById('play-main').textContent = '▶';
+    }
+  };
 }
 
 function cycleSpeed(){
