@@ -3,6 +3,10 @@ on:
   push:
     branches: [ android-app ]
   workflow_dispatch:
+
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -20,15 +24,21 @@ jobs:
       - run: chmod +x gradlew
       - run: ./gradlew assembleDebug --no-daemon
       - run: cp app/build/outputs/apk/debug/app-debug.apk PositivelyGeared.apk
-      - uses: actions/upload-artifact@v4
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
         with:
           name: PositivelyGeared-APK
           path: PositivelyGeared.apk
-      - uses: softprops/action-gh-release@v2
-        with:
-          tag_name: apk-latest
-          name: Positively Geared Audiobook App
-          body: "Download PositivelyGeared.apk and install on your Android phone"
-          files: PositivelyGeared.apk
+      - name: Delete old release
+        run: gh release delete apk-latest --yes 2>/dev/null || true
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Delete old tag
+        run: git push origin :refs/tags/apk-latest 2>/dev/null || true
+      - name: Create new release
+        run: |
+          gh release create apk-latest PositivelyGeared.apk \
+            --title "Positively Geared Audiobook App" \
+            --notes "Download PositivelyGeared.apk and install on your Android phone."
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
