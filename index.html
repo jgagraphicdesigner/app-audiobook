@@ -270,8 +270,8 @@ footer{background:var(--purple-mid);border-top:1px solid var(--border);padding:2
         <button class="btn-outline" onclick="document.getElementById('chapters').scrollIntoView({behavior:'smooth'})">View all chapters</button>
       </div>
 
-      <!-- App Download Buttons -->
-      <div style="margin-top:1.2rem;display:flex;align-items:center;gap:0.8rem;flex-wrap:wrap">
+      <!-- App Download Buttons — hidden inside APK -->
+      <div id="app-download-btns" style="margin-top:1.2rem;display:flex;align-items:center;gap:0.8rem;flex-wrap:wrap">
 
         <!-- Android APK -->
         <a href="https://github.com/jgagraphicdesigner/app-audiobook/releases/latest/download/PositivelyGeared.apk"
@@ -907,10 +907,13 @@ window.showResumePrompt = function(chapterId, positionSeconds) {
 
 // Check localStorage on web load
 function checkLocalResume() {
-  if(window.AndroidBridge) return;
+  // Don't show if already playing
+  if (playing) return;
   try {
     const saved = JSON.parse(localStorage.getItem('pg_resume') || '{}');
-    if(saved.chapter && saved.position > 5) window.showResumePrompt(saved.chapter, saved.position);
+    if (saved.chapter && saved.position > 5) {
+      window.showResumePrompt(saved.chapter, saved.position);
+    }
   } catch(e){}
 }
 
@@ -930,6 +933,28 @@ function dismissResume() {
 }
 
 setTimeout(checkLocalResume, 800);
+
+// Detect if running inside Android APK WebView
+const isAPK = !!(window.AndroidBridge) ||
+  (navigator.userAgent.includes('Android') && navigator.userAgent.includes('wv'));
+
+// Hide download buttons inside APK
+if (isAPK) {
+  const btns = document.getElementById('app-download-btns');
+  if (btns) btns.style.display = 'none';
+}
+
+// Show resume banner every time user returns to the app
+// (covers: app backgrounded, phone locked, switching apps)
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && !playing) {
+    setTimeout(checkLocalResume, 500);
+  }
+});
+
+window.addEventListener('pageshow', (e) => {
+  if (e.persisted && !playing) setTimeout(checkLocalResume, 500);
+});
 
 // ── DOWNLOAD ALL ────────────────────────────────────────────────────────
 let dlAllQueue = [];
