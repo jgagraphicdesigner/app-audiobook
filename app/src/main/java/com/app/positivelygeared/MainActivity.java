@@ -1,15 +1,14 @@
 package com.app.positivelygeared;
 
+import android.Manifest;
 import android.content.BroadcastReceiver;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.ServiceConnection;
+import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.IBinder;
 import android.view.View;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebChromeClient;
@@ -20,38 +19,32 @@ import android.webkit.WebViewClient;
 import android.widget.ProgressBar;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
 public class MainActivity extends AppCompatActivity {
 
     private WebView webView;
     private ProgressBar progressBar;
-    private MediaPlayerService mediaService;
-    private boolean serviceBound = false;
+    private static final int NOTIF_PERMISSION_CODE = 100;
 
     private static final String PREF_CHAPTER  = "last_chapter";
     private static final String PREF_POSITION = "last_position";
 
-    // Receives play/pause/next/prev from notification buttons
+    // Receives play/pause/next/prev from notification buttons → forwards to WebView
     private BroadcastReceiver controlReceiver = new BroadcastReceiver() {
-        @Override public void onReceive(Context ctx, Intent intent) {
+        @Override
+        public void onReceive(Context ctx, Intent intent) {
             String action = intent.getStringExtra("action");
             if (action == null || webView == null) return;
-            switch (action) {
-                case "play":   webView.evaluateJavascript("if(!playing)togglePlay();", null); break;
-                case "pause":  webView.evaluateJavascript("if(playing)togglePlay();", null); break;
-                case "next":   webView.evaluateJavascript("nextChapter();", null); break;
-                case "prev":   webView.evaluateJavascript("prevChapter();", null); break;
-            }
-        }
-    };
-
-    private ServiceConnection serviceConn = new ServiceConnection() {
-        @Override public void onServiceConnected(ComponentName n, IBinder b) {
-            mediaService = ((MediaPlayerService.LocalBinder) b).getService();
-            serviceBound = true;
-        }
-        @Override public void onServiceDisconnected(ComponentName n) {
-            serviceBound = false;
+            runOnUiThread(() -> {
+                switch (action) {
+                    case "play":  webView.evaluateJavascript("if(window.playing===false)togglePlay();", null); break;
+                    case "pause": webView.evaluateJavascript("if(window.playing===true)togglePlay();", null); break;
+                    case "next":  webView.evaluateJavascript("nextChapter();", null); break;
+                    case "prev":  webView.evaluateJavascript("prevChapter();", null); break;
+                }
+            });
         }
     };
 
@@ -61,17 +54,31 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         progressBar = findViewById(R.id.progressBar);
         webView     = findViewById(R.id.webView);
+
         setupWebView();
-        // Register notification button receiver
-        IntentFilter filter = new IntentFilter("com.app.pg.WEBVIEW_CONTROL");
+        requestNotificationPermission();
+        registerControlReceiver();
+    }
+
+    private void requestNotificationPermission() {
+        // Android 13+ requires explicit notification permission
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                    != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.POST_NOTIFICATIONS},
+                    NOTIF_PERMISSION_CODE);
+            }
+        }
+    }
+
+    private void registerControlReceiver() {
+        IntentFilter filter = new IntentFilter("pg.WEBVIEW_CONTROL");
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             registerReceiver(controlReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
         } else {
             registerReceiver(controlReceiver, filter);
         }
-        // Bind to media service
-        Intent serviceIntent = new Intent(this, MediaPlayerService.class);
-        bindService(serviceIntent, serviceConn, Context.BIND_AUTO_CREATE);
     }
 
     private void setupWebView() {
@@ -81,8 +88,8 @@ public class MainActivity extends AppCompatActivity {
         s.setMediaPlaybackRequiresUserGesture(false);
         s.setCacheMode(WebSettings.LOAD_DEFAULT);
         s.setAllowFileAccess(true);
-        s.setMixedContentMode(WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE);
         s.setDatabaseEnabled(true);
+        s.setMixedContentMode(WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE);
 
         webView.addJavascriptInterface(new Bridge(), "AndroidBridge");
 
@@ -116,23 +123,25 @@ public class MainActivity extends AppCompatActivity {
         int pos = p.getInt(PREF_POSITION, 0);
         if (ch > 0 && pos > 5) {
             webView.evaluateJavascript(
-                "if(window.showResumePrompt) window.showResumePrompt(" + ch + "," + pos + ");", null);
+                "if(window.showResumePrompt)window.showResumePrompt(" + ch + "," + pos + ");", null);
         }
     }
 
-    // ── JS Bridge ────────────────────────────────────────────────────────
     public class Bridge {
 
-        // Called by JS when playback starts/changes
         @JavascriptInterface
         public void updatePlaybackState(String chapterTitle, String chapterNum, boolean isPlaying) {
             runOnUiThread(() -> {
-                // Start / update notification
+                // Start foreground service with media notification
                 Intent i = new Intent(MainActivity.this, MediaPlayerService.class);
-                i.putExtra(MediaPlayerService.EXTRA_TITLE,   chapterTitle);
-                i.putExtra(MediaPlayerService.EXTRA_CHAPTER, chapterNum);
+                i.putExtra(MediaPlayerService.EXTRA_TITLE,   "Positively Geared Audiobook");
+                i.putExtra(MediaPlayerService.EXTRA_CHAPTER, chapterNum + ": " + chapterTitle);
                 i.putExtra(MediaPlayerService.EXTRA_PLAYING, isPlaying);
-                startService(i);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    startForegroundService(i);
+                } else {
+                    startService(i);
+                }
             });
         }
 
@@ -164,7 +173,6 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        unregisterReceiver(controlReceiver);
-        if (serviceBound) { unbindService(serviceConn); serviceBound = false; }
+        try { unregisterReceiver(controlReceiver); } catch (Exception ignored) {}
     }
 }

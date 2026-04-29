@@ -31,15 +31,14 @@
             android:exported="false"
             android:screenOrientation="portrait"
             android:configChanges="orientation|screenSize|keyboardHidden"
+            android:launchMode="singleTop"
             android:windowSoftInputMode="adjustResize" />
 
-        <!-- Spotify-style media notification service -->
         <service
             android:name=".MediaPlayerService"
             android:exported="false"
             android:foregroundServiceType="mediaPlayback" />
 
-        <!-- Background download service -->
         <service
             android:name=".DownloadService"
             android:exported="false"
