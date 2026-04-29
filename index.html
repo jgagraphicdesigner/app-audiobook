@@ -8,7 +8,10 @@
 <meta name="theme-color" content="#1a0a2e">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Positively Geared">
+<meta name="apple-mobile-web-app-title" content="Pos. Geared">
+<link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+<link rel="apple-touch-icon" sizes="192x192" href="./icons/icon-192.png">
+<link rel="apple-touch-icon" sizes="512x512" href="./icons/icon-512.png">
 <link href="https://fonts.googleapis.com/css2?family=Georgia:ital@0;1&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -282,18 +285,41 @@ footer{background:var(--purple-mid);border-top:1px solid var(--border);padding:2
   </div>
   <div style="height:1.5rem"></div>
 
-  <!-- Offline banner -->
-  <div id="offline-banner" style="display:none;background:linear-gradient(135deg,#2a1a3a,#1e1030);border:1px solid var(--border);border-radius:var(--radius);padding:1rem 1.4rem;margin-bottom:1.4rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem">
-    <div style="display:flex;align-items:center;gap:0.9rem">
-      <span style="font-size:1.5rem">📲</span>
-      <div>
-        <div style="font-size:0.88rem;font-weight:700;color:var(--white);margin-bottom:0.2rem">Listen offline — install this app</div>
-        <div style="font-size:0.78rem;color:var(--text-muted)">Add to your home screen to listen without internet. All chapters download to your device.</div>
+  <!-- Install App Banner -->
+  <div id="offline-banner" style="display:none;background:linear-gradient(135deg,#2a1a3a,#1e1030);border:1px solid var(--border);border-radius:var(--radius);padding:1.2rem 1.4rem;margin-bottom:1.4rem">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:0.8rem">
+      <div style="display:flex;align-items:center;gap:0.9rem">
+        <img src="./icons/icon-192.png" alt="App icon" style="width:48px;height:48px;border-radius:12px;flex-shrink:0">
+        <div>
+          <div style="font-size:0.92rem;font-weight:700;color:var(--white)">Install Positively Geared</div>
+          <div style="font-size:0.76rem;color:var(--text-muted)">Listen offline · No app store needed</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.6rem;align-items:center">
+        <button id="install-btn" onclick="installApp()" style="background:var(--gold);color:var(--purple-dark);border:none;border-radius:6px;padding:0.55rem 1.2rem;font-size:0.82rem;font-weight:700;cursor:pointer;font-family:'Lato',sans-serif">Install App</button>
+        <button onclick="document.getElementById('offline-banner').style.display='none'" style="background:transparent;border:none;color:var(--text-muted);cursor:pointer;font-size:1.2rem;line-height:1">✕</button>
       </div>
     </div>
-    <div style="display:flex;gap:0.7rem;align-items:center">
-      <button id="install-btn" onclick="installApp()" style="background:var(--gold);color:var(--purple-dark);border:none;border-radius:6px;padding:0.55rem 1.2rem;font-size:0.82rem;font-weight:700;cursor:pointer;font-family:'Lato',sans-serif">Install App</button>
-      <button onclick="document.getElementById('offline-banner').style.display='none'" style="background:transparent;border:none;color:var(--text-muted);cursor:pointer;font-size:1.1rem;padding:0.2rem">✕</button>
+    <!-- iOS / Android tabs -->
+    <div id="install-tabs" style="display:none">
+      <div style="display:flex;gap:0.5rem;margin-bottom:1rem">
+        <button onclick="showInstallTab('ios')" id="tab-ios" style="flex:1;padding:0.4rem;border-radius:6px;border:1px solid var(--border);background:var(--purple-accent);color:var(--white);font-family:'Lato',sans-serif;font-size:0.78rem;font-weight:600;cursor:pointer"> iPhone / iPad</button>
+        <button onclick="showInstallTab('android')" id="tab-android" style="flex:1;padding:0.4rem;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text-muted);font-family:'Lato',sans-serif;font-size:0.78rem;cursor:pointer"> Android</button>
+      </div>
+      <div id="install-ios">
+        <div style="display:flex;flex-direction:column;gap:0.6rem">
+          <div style="display:flex;align-items:center;gap:0.8rem;font-size:0.82rem;color:var(--text-body)"><span style="width:24px;height:24px;border-radius:50%;background:var(--gold);color:var(--purple-dark);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.75rem;flex-shrink:0">1</span>Tap the <strong style="color:var(--gold)">Share</strong> button at the bottom of Safari (the box with an arrow ↑)</div>
+          <div style="display:flex;align-items:center;gap:0.8rem;font-size:0.82rem;color:var(--text-body)"><span style="width:24px;height:24px;border-radius:50%;background:var(--gold);color:var(--purple-dark);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.75rem;flex-shrink:0">2</span>Scroll down and tap <strong style="color:var(--gold)">"Add to Home Screen"</strong></div>
+          <div style="display:flex;align-items:center;gap:0.8rem;font-size:0.82rem;color:var(--text-body)"><span style="width:24px;height:24px;border-radius:50%;background:var(--gold);color:var(--purple-dark);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.75rem;flex-shrink:0">3</span>Tap <strong style="color:var(--gold)">"Add"</strong> — the app icon appears on your home screen!</div>
+        </div>
+      </div>
+      <div id="install-android" style="display:none">
+        <div style="display:flex;flex-direction:column;gap:0.6rem">
+          <div style="display:flex;align-items:center;gap:0.8rem;font-size:0.82rem;color:var(--text-body)"><span style="width:24px;height:24px;border-radius:50%;background:var(--gold);color:var(--purple-dark);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.75rem;flex-shrink:0">1</span>Tap the <strong style="color:var(--gold)">menu (⋮)</strong> in the top-right of Chrome</div>
+          <div style="display:flex;align-items:center;gap:0.8rem;font-size:0.82rem;color:var(--text-body)"><span style="width:24px;height:24px;border-radius:50%;background:var(--gold);color:var(--purple-dark);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.75rem;flex-shrink:0">2</span>Tap <strong style="color:var(--gold)">"Add to Home Screen"</strong> or <strong style="color:var(--gold)">"Install App"</strong></div>
+          <div style="display:flex;align-items:center;gap:0.8rem;font-size:0.82rem;color:var(--text-body)"><span style="width:24px;height:24px;border-radius:50%;background:var(--gold);color:var(--purple-dark);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.75rem;flex-shrink:0">3</span>Tap <strong style="color:var(--gold)">"Install"</strong> — the app icon appears on your home screen!</div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -591,19 +617,44 @@ let deferredPrompt = null;
 window.addEventListener('beforeinstallprompt', e => {
   e.preventDefault();
   deferredPrompt = e;
-  document.getElementById('offline-banner').style.display = 'flex';
+  document.getElementById('offline-banner').style.display = 'block';
 });
 window.addEventListener('appinstalled', () => {
   document.getElementById('offline-banner').style.display = 'none';
   deferredPrompt = null;
 });
+
+// Always show the install banner after 3 seconds (for iOS users who won't get beforeinstallprompt)
+setTimeout(() => {
+  const banner = document.getElementById('offline-banner');
+  if(banner.style.display === 'none' || banner.style.display === '') {
+    banner.style.display = 'block';
+    // Show instruction tabs for manual install
+    document.getElementById('install-tabs').style.display = 'block';
+    // Auto-detect iOS vs Android
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    showInstallTab(isIOS ? 'ios' : 'android');
+  }
+}, 3000);
+
+function showInstallTab(tab) {
+  document.getElementById('install-ios').style.display = tab === 'ios' ? 'block' : 'none';
+  document.getElementById('install-android').style.display = tab === 'android' ? 'block' : 'none';
+  document.getElementById('tab-ios').style.background = tab === 'ios' ? 'var(--purple-accent)' : 'transparent';
+  document.getElementById('tab-ios').style.color = tab === 'ios' ? 'var(--white)' : 'var(--text-muted)';
+  document.getElementById('tab-android').style.background = tab === 'android' ? 'var(--purple-accent)' : 'transparent';
+  document.getElementById('tab-android').style.color = tab === 'android' ? 'var(--white)' : 'var(--text-muted)';
+}
+
 function installApp(){
   if(deferredPrompt){
     deferredPrompt.prompt();
     deferredPrompt.userChoice.then(()=>{ deferredPrompt = null; });
   } else {
-    // iOS / fallback — show manual instructions
-    alert('To install on iPhone/iPad:\n1. Tap the Share button (box with arrow)\n2. Tap "Add to Home Screen"\n3. Tap "Add"\n\nOn Android:\nTap the menu (⋮) → "Add to Home Screen"');
+    // Show manual steps
+    document.getElementById('install-tabs').style.display = 'block';
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    showInstallTab(isIOS ? 'ios' : 'android');
   }
 }
 
