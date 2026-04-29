@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="purple_dark">#1a0a2e</color>
+    <color name="purple_mid">#2a1a3a</color>
+    <color name="purple_accent">#563a75</color>
+    <color name="gold">#f9c74f</color>
+    <color name="lavender">#c9a8e8</color>
+    <color name="green_download">#22a84a</color>
+    <color name="white">#FFFFFF</color>
+</resources>
