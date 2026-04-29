@@ -270,8 +270,10 @@ footer{background:var(--purple-mid);border-top:1px solid var(--border);padding:2
         <button class="btn-outline" onclick="document.getElementById('chapters').scrollIntoView({behavior:'smooth'})">View all chapters</button>
       </div>
 
-      <!-- Install App Button — direct APK download -->
+      <!-- App Download Buttons -->
       <div style="margin-top:1.2rem;display:flex;align-items:center;gap:0.8rem;flex-wrap:wrap">
+
+        <!-- Android APK -->
         <a href="https://github.com/jgagraphicdesigner/app-audiobook/releases/latest/download/PositivelyGeared.apk"
            download="PositivelyGeared.apk"
            style="display:inline-flex;align-items:center;gap:0.7rem;background:#1a1a1a;border:1.5px solid #22a84a;border-radius:10px;padding:0.6rem 1.2rem;text-decoration:none;transition:all 0.2s"
@@ -283,7 +285,49 @@ footer{background:var(--purple-mid);border-top:1px solid var(--border);padding:2
             <div style="font-size:0.9rem;font-weight:700;color:#fff;line-height:1.3">Android App (.apk)</div>
           </div>
         </a>
-        <div style="font-size:0.72rem;color:var(--text-muted);max-width:220px;line-height:1.4">Free · No app store · Tap to install on Android</div>
+
+        <!-- iPhone/iPad -->
+        <button onclick="document.getElementById('ios-popup').style.display='flex'"
+           style="display:inline-flex;align-items:center;gap:0.7rem;background:#1a1a1a;border:1.5px solid #c9a8e8;border-radius:10px;padding:0.6rem 1.2rem;cursor:pointer;transition:all 0.2s;font-family:'Lato',sans-serif"
+           onmouseover="this.style.background='#1a1a2a'"
+           onmouseout="this.style.background='#1a1a1a'">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="#c9a8e8"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+          <div>
+            <div style="font-size:0.62rem;color:#c9a8e8;line-height:1;letter-spacing:0.05em;text-transform:uppercase">Install on</div>
+            <div style="font-size:0.9rem;font-weight:700;color:#fff;line-height:1.3">iPhone / iPad</div>
+          </div>
+        </button>
+
+      </div>
+
+      <!-- iOS Install Popup -->
+      <div id="ios-popup" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9999;align-items:center;justify-content:center;padding:1.5rem">
+        <div style="background:#1e1030;border:1px solid #563a75;border-radius:16px;padding:1.8rem;max-width:340px;width:100%;position:relative">
+          <button onclick="document.getElementById('ios-popup').style.display='none'" style="position:absolute;top:1rem;right:1rem;background:none;border:none;color:var(--text-muted);font-size:1.3rem;cursor:pointer;line-height:1">✕</button>
+          <div style="font-size:1.05rem;font-weight:700;color:var(--white);margin-bottom:0.3rem"> Install on iPhone / iPad</div>
+          <div style="font-size:0.76rem;color:var(--text-muted);margin-bottom:1.4rem">Free · No App Store needed · Works offline</div>
+          <div style="display:flex;flex-direction:column;gap:0.9rem">
+            <div style="display:flex;gap:0.8rem;align-items:center">
+              <span style="width:28px;height:28px;border-radius:50%;background:var(--gold);color:var(--purple-dark);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.8rem;flex-shrink:0">1</span>
+              <div style="font-size:0.85rem;color:var(--text-body)">Open this site in <strong style="color:var(--gold)">Safari</strong> on your iPhone or iPad</div>
+            </div>
+            <div style="display:flex;gap:0.8rem;align-items:center">
+              <span style="width:28px;height:28px;border-radius:50%;background:var(--gold);color:var(--purple-dark);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.8rem;flex-shrink:0">2</span>
+              <div style="font-size:0.85rem;color:var(--text-body)">Tap the <strong style="color:var(--gold)">Share button ↑</strong> at the bottom of the screen</div>
+            </div>
+            <div style="display:flex;gap:0.8rem;align-items:center">
+              <span style="width:28px;height:28px;border-radius:50%;background:var(--gold);color:var(--purple-dark);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.8rem;flex-shrink:0">3</span>
+              <div style="font-size:0.85rem;color:var(--text-body)">Scroll down and tap <strong style="color:var(--gold)">"Add to Home Screen"</strong></div>
+            </div>
+            <div style="display:flex;gap:0.8rem;align-items:center">
+              <span style="width:28px;height:28px;border-radius:50%;background:var(--gold);color:var(--purple-dark);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.8rem;flex-shrink:0">4</span>
+              <div style="font-size:0.85rem;color:var(--text-body)">Tap <strong style="color:var(--gold)">"Add"</strong> — the app icon appears on your home screen! 🎉</div>
+            </div>
+          </div>
+          <div style="margin-top:1.3rem;background:rgba(249,199,79,0.08);border:1px solid rgba(249,199,79,0.2);border-radius:8px;padding:0.7rem 0.9rem;font-size:0.75rem;color:var(--gold)">
+            💡 Must be opened in <strong>Safari</strong> — Chrome on iPhone doesn't support Add to Home Screen
+          </div>
+        </div>
       </div>
 
     </div>
