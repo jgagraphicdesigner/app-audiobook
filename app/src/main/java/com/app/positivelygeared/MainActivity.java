@@ -26,11 +26,11 @@ public class MainActivity extends AppCompatActivity {
 
     private WebView webView;
     private ProgressBar progressBar;
-    private static final int NOTIF_PERM = 100;
+    private static final int NOTIF_PERM     = 100;
     private static final String PREF_CHAPTER  = "last_chapter";
     private static final String PREF_POSITION = "last_position";
 
-    // Receives control actions from notification buttons → sends to WebView JS
+    // Receives pg.WEBVIEW_CONTROL broadcasts from MediaPlayerService buttons
     private final BroadcastReceiver controlReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context ctx, Intent intent) {
@@ -38,14 +38,13 @@ public class MainActivity extends AppCompatActivity {
             String action = intent.getStringExtra("action");
             if (action == null) return;
             runOnUiThread(() -> {
+                // Simple direct JS calls — no state checking, just call the function
                 switch (action) {
                     case "play":
-                        webView.evaluateJavascript(
-                            "(function(){ if(!window.playing){ togglePlay(); } })()", null);
+                        webView.evaluateJavascript("togglePlay();", null);
                         break;
                     case "pause":
-                        webView.evaluateJavascript(
-                            "(function(){ if(window.playing){ togglePlay(); } })()", null);
+                        webView.evaluateJavascript("togglePlay();", null);
                         break;
                     case "next":
                         webView.evaluateJavascript("nextChapter();", null);
@@ -66,7 +65,7 @@ public class MainActivity extends AppCompatActivity {
         webView     = findViewById(R.id.webView);
         setupWebView();
         requestNotifPermission();
-        registerReceiver();
+        registerControlReceiver();
     }
 
     private void requestNotifPermission() {
@@ -79,7 +78,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void registerReceiver() {
+    private void registerControlReceiver() {
         IntentFilter filter = new IntentFilter("pg.WEBVIEW_CONTROL");
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             registerReceiver(controlReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
@@ -135,7 +134,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public class Bridge {
-        // Called by JS when chapter starts playing or pauses
         @JavascriptInterface
         public void updatePlaybackState(String chapterTitle, String chapterNum, boolean isPlaying) {
             runOnUiThread(() -> {
