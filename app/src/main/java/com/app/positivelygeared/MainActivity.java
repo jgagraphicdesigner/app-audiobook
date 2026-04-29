@@ -21,16 +21,18 @@ import android.widget.ProgressBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 public class MainActivity extends AppCompatActivity {
 
     private WebView webView;
     private ProgressBar progressBar;
-    private static final int NOTIF_PERM     = 100;
+    private LocalBroadcastManager localBroadcast;
+    private static final int NOTIF_PERM = 100;
     private static final String PREF_CHAPTER  = "last_chapter";
     private static final String PREF_POSITION = "last_position";
 
-    // Receives pg.WEBVIEW_CONTROL broadcasts from MediaPlayerService buttons
+    // Listens for LOCAL broadcasts from MediaPlayerService
     private final BroadcastReceiver controlReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context ctx, Intent intent) {
@@ -38,7 +40,6 @@ public class MainActivity extends AppCompatActivity {
             String action = intent.getStringExtra("action");
             if (action == null) return;
             runOnUiThread(() -> {
-                // Simple direct JS calls — no state checking, just call the function
                 switch (action) {
                     case "play":
                         webView.evaluateJavascript("togglePlay();", null);
@@ -61,11 +62,16 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        progressBar = findViewById(R.id.progressBar);
-        webView     = findViewById(R.id.webView);
+        progressBar    = findViewById(R.id.progressBar);
+        webView        = findViewById(R.id.webView);
+        localBroadcast = LocalBroadcastManager.getInstance(this);
+
         setupWebView();
         requestNotifPermission();
-        registerControlReceiver();
+
+        // Register with LocalBroadcastManager — works reliably on all Android versions
+        localBroadcast.registerReceiver(controlReceiver,
+            new IntentFilter(MediaPlayerService.LOCAL_CONTROL));
     }
 
     private void requestNotifPermission() {
@@ -75,15 +81,6 @@ public class MainActivity extends AppCompatActivity {
                 ActivityCompat.requestPermissions(this,
                     new String[]{Manifest.permission.POST_NOTIFICATIONS}, NOTIF_PERM);
             }
-        }
-    }
-
-    private void registerControlReceiver() {
-        IntentFilter filter = new IntentFilter("pg.WEBVIEW_CONTROL");
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            registerReceiver(controlReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
-        } else {
-            registerReceiver(controlReceiver, filter);
         }
     }
 
@@ -170,6 +167,6 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        try { unregisterReceiver(controlReceiver); } catch (Exception ignored) {}
+        localBroadcast.unregisterReceiver(controlReceiver);
     }
 }

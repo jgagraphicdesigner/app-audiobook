@@ -10,17 +10,14 @@ android {
         applicationId "com.app.positivelygeared"
         minSdk 21
         targetSdk 34
-        versionCode 3
-        versionName "3.0"
+        versionCode 4
+        versionName "4.0"
     }
 
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-        }
-        debug {
-            versionNameSuffix ".debug"
         }
     }
 
@@ -34,6 +31,8 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'com.google.android.material:material:1.10.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
-    // Media notification (Spotify-style) — required for MediaSession
+    // Media notification (Spotify-style)
     implementation 'androidx.media:media:1.7.0'
+    // LocalBroadcastManager — required for notification button communication
+    implementation 'androidx.localbroadcastmanager:localbroadcastmanager:1.1.0'
 }
