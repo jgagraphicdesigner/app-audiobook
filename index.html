@@ -1026,6 +1026,11 @@ function showDlAllDone() {
 }
 
 renderGrid('');
+
+// Expose globally so Android evaluateJavascript can call them from notification buttons
+window.togglePlay  = togglePlay;
+window.nextChapter = nextChapter;
+window.prevChapter = prevChapter;
 </script>
 </body>
 </html>
