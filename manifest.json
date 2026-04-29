@@ -1,0 +1,22 @@
+{
+  "name": "Positively Geared Audiobook",
+  "short_name": "Pos. Geared",
+  "description": "Positively Geared by Lloyd Edge — Aus Property Professionals Audiobook",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#1a0a2e",
+  "theme_color": "#1a0a2e",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://assets.cdn.filesafe.space/v8WBIjPezNPecau8Wu8F/media/686cfaae000e73767ee02c5a.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://assets.cdn.filesafe.space/v8WBIjPezNPecau8Wu8F/media/686cfaae000e73767ee02c5a.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

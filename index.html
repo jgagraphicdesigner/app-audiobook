@@ -4,6 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Positively Geared Audiobook — Aus Property Professionals</title>
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#1a0a2e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Positively Geared">
 <link href="https://fonts.googleapis.com/css2?family=Georgia:ital@0;1&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -180,8 +185,8 @@ footer{background:var(--purple-mid);border-top:1px solid var(--border);padding:2
       <p class="hero-desc">How to build a multi-million dollar property portfolio. Listen to Lloyd's proven strategies that have helped thousands of Australians achieve financial freedom through property.</p>
       <div class="hero-stats">
         <div class="stat"><span class="stat-num">11</span><span class="stat-label">Chapters</span></div>
-        <div class="stat"><span class="stat-num">Free</span><span class="stat-label">To Listen</span></div>
-        <div class="stat"><span class="stat-num">5★</span><span class="stat-label">Rated</span></div>
+        <div class="stat"><span class="stat-num">8h+</span><span class="stat-label">Total runtime</span></div>
+        <div class="stat"><span class="stat-num">Free</span><span class="stat-label">To listen</span></div>
       </div>
       <div class="hero-actions">
         <button class="btn-primary" onclick="playChapter(chapters[0])">▶ Start from Chapter 1</button>
@@ -202,6 +207,22 @@ footer{background:var(--purple-mid);border-top:1px solid var(--border);padding:2
     <div class="section-title">Chapters</div>
   </div>
   <div style="height:1.5rem"></div>
+
+  <!-- Offline banner -->
+  <div id="offline-banner" style="display:none;background:linear-gradient(135deg,#2a1a3a,#1e1030);border:1px solid var(--border);border-radius:var(--radius);padding:1rem 1.4rem;margin-bottom:1.4rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem">
+    <div style="display:flex;align-items:center;gap:0.9rem">
+      <span style="font-size:1.5rem">📲</span>
+      <div>
+        <div style="font-size:0.88rem;font-weight:700;color:var(--white);margin-bottom:0.2rem">Listen offline — install this app</div>
+        <div style="font-size:0.78rem;color:var(--text-muted)">Add to your home screen to listen without internet. All chapters download to your device.</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:0.7rem;align-items:center">
+      <button id="install-btn" onclick="installApp()" style="background:var(--gold);color:var(--purple-dark);border:none;border-radius:6px;padding:0.55rem 1.2rem;font-size:0.82rem;font-weight:700;cursor:pointer;font-family:'Lato',sans-serif">Install App</button>
+      <button onclick="document.getElementById('offline-banner').style.display='none'" style="background:transparent;border:none;color:var(--text-muted);cursor:pointer;font-size:1.1rem;padding:0.2rem">✕</button>
+    </div>
+  </div>
+
   <div class="chapter-grid" id="chapter-grid"></div>
 </div>
 
@@ -308,24 +329,72 @@ const chapters = [
 const BASE_STREAM = 'https://jgagraphicdesigner.github.io/app-audiobook/audio/';
 const BASE_DOWNLOAD = 'https://raw.githubusercontent.com/jgagraphicdesigner/app-audiobook/main/audio/';
 
-// Audio file map — add filename here when each chapter is uploaded
+// Audio file map — all chapters hosted on GitHub
 const audioMap = {
-  1: 'chapter_1.mp3',
-  2: null,
-  3: null,
-  4: null,
-  5: null,
-  6: null,
-  7: null,
-  8: null,
-  9: null,
-  10: null,
-  11: null,
+  1:  'chapter_1.mp3',
+  2:  'chapter_2.mp3',
+  3:  'chapter_3.mp3',
+  4:  'chapter_4.mp3',
+  5:  'chapter_5.mp3',
+  6:  'chapter_6.mp3',
+  7:  'chapter_7.mp3',
+  8:  'chapter_8.mp3',
+  9:  'chapter_9.mp3',
+  10: 'chapter_10.mp3',
+  11: 'chapter_11.mp3',
 };
 
-// Pre-set known durations
-const durMap = { 1: '47m 24s' };
+// Real durations from audio metadata
+const durMap = {
+  1:'47m 24s', 2:'35m 05s', 3:'44m 37s', 4:'42m 09s',
+  5:'58m 46s', 6:'38m 48s', 7:'45m 46s', 8:'48m 15s',
+  9:'53m 14s', 10:'34m 54s', 11:'39m 45s'
+};
 chapters.forEach(ch => { if(durMap[ch.id]) ch.dur = durMap[ch.id]; });
+
+// Register Service Worker for offline support
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('./sw.js').then(()=>{
+    console.log('Offline support ready');
+    // Listen for cache status messages from SW
+    navigator.serviceWorker.addEventListener('message', e => {
+      if(e.data.type === 'CACHED_STATUS' && e.data.cached){
+        const id = Object.entries(audioMap).find(([k,v])=> e.data.url.includes(v))?.[0];
+        if(id){ cachedChapters.add(parseInt(id)); updateDlBtn(parseInt(id)); }
+      }
+    });
+    // Check which chapters are already cached
+    Object.entries(audioMap).forEach(([id, file])=>{
+      if(file && navigator.serviceWorker.controller){
+        navigator.serviceWorker.controller.postMessage({
+          type:'CHECK_CACHED', url: BASE_STREAM+file
+        });
+      }
+    });
+  }).catch(()=>{});
+}
+
+const cachedChapters = new Set();
+
+function cacheChapter(id){
+  const file = audioMap[id];
+  if(!file) return;
+  const url = BASE_STREAM + file;
+  if(navigator.serviceWorker.controller){
+    navigator.serviceWorker.controller.postMessage({type:'CACHE_AUDIO', url});
+  }
+  cachedChapters.add(id);
+  setTimeout(()=>updateDlBtn(id), 500);
+}
+
+function updateDlBtn(id){
+  const btn = document.getElementById('dl-btn-'+id);
+  if(btn && cachedChapters.has(id)){
+    btn.textContent = '✓';
+    btn.style.background = 'var(--purple-accent)';
+    btn.title = 'Saved for offline listening';
+  }
+}
 
 let currentChapter = null;
 let playing = false;
@@ -362,7 +431,7 @@ function renderGrid(search){
           <span>${ch.dur ? ch.dur : (hasAudio ? 'Listen now' : 'Coming soon')}</span>
         </div>
         <div style="display:flex;align-items:center;gap:0.5rem">
-          ${dlUrl ? `<a href="${dlUrl}" download="Positively_Geared_${ch.num.replace(' ','_')}.mp3" onclick="event.stopPropagation()" title="Download for offline listening" style="width:30px;height:30px;border-radius:50%;background:var(--border);display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:0.8rem;transition:background 0.2s;flex-shrink:0" onmouseover="this.style.background='var(--purple-accent)'" onmouseout="this.style.background='var(--border)'">⬇</a>` : ''}
+          ${dlUrl ? `<a href="${dlUrl}" download="Positively_Geared_${ch.num.replace(' ','_')}.mp3" onclick="event.stopPropagation();cacheChapter(${ch.id})" title="Download for offline listening" id="dl-btn-${ch.id}" style="width:30px;height:30px;border-radius:50%;background:var(--border);display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:0.8rem;transition:background 0.2s;flex-shrink:0" onmouseover="this.style.background='var(--purple-accent)'" onmouseout="this.style.background=cachedChapters.has(${ch.id})?'var(--purple-accent)':'var(--border)'">⬇</a>` : ''}
           <button class="chapter-play" style="${!hasAudio?'opacity:0.35;cursor:not-allowed':''}" onclick="event.stopPropagation();${hasAudio?`playChapter(chapters.find(c=>c.id==${ch.id}))`:''}">
             ${isCurrent&&playing?'⏸':'▶'}
           </button>
@@ -442,6 +511,27 @@ audioEl.addEventListener('ended',()=>{
 });
 
 function filterChapters(v){renderGrid(v.toLowerCase());}
+
+// PWA install prompt
+let deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  document.getElementById('offline-banner').style.display = 'flex';
+});
+window.addEventListener('appinstalled', () => {
+  document.getElementById('offline-banner').style.display = 'none';
+  deferredPrompt = null;
+});
+function installApp(){
+  if(deferredPrompt){
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(()=>{ deferredPrompt = null; });
+  } else {
+    // iOS / fallback — show manual instructions
+    alert('To install on iPhone/iPad:\n1. Tap the Share button (box with arrow)\n2. Tap "Add to Home Screen"\n3. Tap "Add"\n\nOn Android:\nTap the menu (⋮) → "Add to Home Screen"');
+  }
+}
 
 renderGrid('');
 </script>
