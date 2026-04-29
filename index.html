@@ -622,34 +622,31 @@ function renderGrid(search){
   }).join('');
 }
 
-async function getAudioSrc(ch) {
-  const file = audioMap[ch.id];
-  if (!file) return null;
-
-  // Try to get from SW cache first (works offline too)
-  try {
-    const cache = await caches.open('positively-geared-audio-v4');
-    const cached = await cache.match('audio::' + file);
-    if (cached) {
-      const blob = await cached.blob();
-      return URL.createObjectURL(blob);
-    }
-  } catch(e) {}
-
-  // Not cached — stream directly from GitHub Releases
-  return BASE_STREAM + file;
-}
-
 function playChapter(ch, startAt){
   startAt = startAt || 0;
   if(!audioMap[ch.id]) return;
   if(currentChapter && currentChapter.id===ch.id && startAt===0){togglePlay();return;}
   currentChapter = ch;
 
-  // Revoke any previous blob URL to free memory
-  if(audioEl._blobUrl) { URL.revokeObjectURL(audioEl._blobUrl); audioEl._blobUrl = null; }
-
   audioEl.oncanplay = null;
+
+  // Set src directly — let the browser handle the redirect
+  audioEl.src = BASE_STREAM + audioMap[ch.id];
+  audioEl.playbackRate = speed;
+  audioEl.volume = 0.8;
+
+  if(startAt > 0){
+    audioEl.oncanplay = function(){
+      audioEl.oncanplay = null;
+      audioEl.currentTime = startAt;
+      audioEl.play().catch(()=>{});
+    };
+    audioEl.load();
+  } else {
+    audioEl.load();
+    audioEl.play().catch(()=>{});
+  }
+
   playing = true;
   document.getElementById('pl-icon').textContent = ch.icon;
   document.getElementById('pl-title').textContent = ch.num+': '+ch.title;
@@ -658,29 +655,6 @@ function playChapter(ch, startAt){
   document.getElementById('cur-time').textContent = startAt > 0 ? fmtTime(startAt) : '0:00';
   document.getElementById('tot-time').textContent = ch.dur || '0:00';
   renderGrid('');
-
-  // Resolve audio source (blob from cache or direct URL)
-  getAudioSrc(ch).then(src => {
-    if(!src) return;
-
-    // Track blob URLs for cleanup
-    if(src.startsWith('blob:')) audioEl._blobUrl = src;
-
-    audioEl.src = src;
-    audioEl.playbackRate = speed;
-    audioEl.volume = 0.8;
-    audioEl.load();
-
-    if(startAt > 0){
-      audioEl.oncanplay = function(){
-        audioEl.oncanplay = null;
-        audioEl.currentTime = startAt;
-        audioEl.play().catch(()=>{});
-      };
-    } else {
-      audioEl.play().catch(()=>{});
-    }
-  });
 }
 
 function prevChapter(){
