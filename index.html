@@ -378,13 +378,14 @@ footer{background:var(--purple-mid);border-top:1px solid var(--border);padding:2
     </div>
 
     <!-- Done state -->
-    <div id="dl-all-done" style="display:none;align-items:center;gap:1rem">
-      <div style="width:44px;height:44px;border-radius:50%;background:#1a9040;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-        <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M4 11l5 5L18 6" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <div id="dl-all-done" style="display:none;align-items:center;gap:1rem;flex-wrap:wrap">
+      <div style="width:48px;height:48px;border-radius:50%;background:#1a9040;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 4px 16px rgba(26,144,64,0.5)">
+        <svg width="26" height="26" viewBox="0 0 26 26" fill="none"><path d="M4 13l6 6L22 7" stroke="white" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </div>
-      <div>
-        <div style="font-size:0.95rem;font-weight:700;color:var(--white)">All 11 chapters saved!</div>
-        <div style="font-size:0.78rem;color:#7dc97d;margin-top:0.2rem">You can now listen to any chapter without internet</div>
+      <div style="flex:1">
+        <div style="font-size:1rem;font-weight:700;color:var(--white)">🎉 All 11 chapters downloaded!</div>
+        <div style="font-size:0.82rem;color:#7dc97d;margin-top:0.3rem">You can now enjoy listening offline — anytime, anywhere, no internet needed.</div>
+        <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.4rem">Turn on airplane mode and tap any chapter to start listening 🎧</div>
       </div>
     </div>
 
@@ -732,6 +733,10 @@ function playChapter(ch, startAt){
   document.getElementById('prog-fill').style.width = '0%';
   document.getElementById('cur-time').textContent = startAt > 0 ? fmtTime(startAt) : '0:00';
   document.getElementById('tot-time').textContent = ch.dur || '0:00';
+
+  // Update Android notification
+  if(window.AndroidBridge) AndroidBridge.updatePlaybackState(ch.title, ch.num, true);
+
   renderGrid('');
 
   // Get blob:// URL if cached, otherwise stream
@@ -795,6 +800,8 @@ function togglePlay(){
     playing = true;
     document.getElementById('play-main').textContent = '⏸';
   }
+  if(window.AndroidBridge) AndroidBridge.updatePlaybackState(
+    currentChapter.title, currentChapter.num, playing);
   renderGrid('');
 }
 
