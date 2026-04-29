@@ -605,7 +605,7 @@ async function checkAllCached() {
   renderGrid('');
 }
 
-// Request persistent storage on iOS/Android so files survive Safari cleanup
+// Request persistent storage so files survive browser cleanup
 async function requestPersistentStorage() {
   if (navigator.storage && navigator.storage.persist) {
     const granted = await navigator.storage.persist();
@@ -614,51 +614,95 @@ async function requestPersistentStorage() {
 }
 requestPersistentStorage();
 
+// Download chapter using XHR with progress — works where fetch() gets blocked
+function downloadChapterXHR(id) {
+  return new Promise((resolve) => {
+    const url = audioMap[id];
+    if (!url) return resolve(false);
+
+    updateDlBtnProgress(id, 0);
+
+    const xhr = new XMLHttpRequest();
+    xhr.open('GET', url, true);
+    xhr.responseType = 'blob';
+    xhr.timeout = 300000; // 5 min timeout for large files
+
+    xhr.onload = async function() {
+      if (xhr.status === 200 || xhr.status === 206) {
+        const blob = xhr.response;
+        if (!blob || blob.size < 10000) {
+          updateDlBtnError(id);
+          return resolve(false);
+        }
+        try {
+          await saveAudioBlob(id, blob);
+          cachedChapters.add(id);
+          updateDlBtn(id);
+          resolve(true);
+        } catch(e) {
+          console.error('Save failed ch' + id, e);
+          updateDlBtnError(id);
+          resolve(false);
+        }
+      } else {
+        console.error('XHR failed ch' + id, xhr.status);
+        updateDlBtnError(id);
+        resolve(false);
+      }
+    };
+
+    xhr.onerror = function() {
+      console.error('XHR error ch' + id);
+      updateDlBtnError(id);
+      resolve(false);
+    };
+
+    xhr.ontimeout = function() {
+      console.error('XHR timeout ch' + id);
+      updateDlBtnError(id);
+      resolve(false);
+    };
+
+    xhr.send();
+  });
+}
+
 // Download chapter and store as blob in IndexedDB
 async function downloadChapter(id) {
+  // Try XHR first (works with GitHub Pages, bypasses fetch CORS restrictions)
+  const xhrResult = await downloadChapterXHR(id);
+  if (xhrResult) return true;
+
+  // Fallback: fetch with various modes
   const url = audioMap[id];
   if (!url) return false;
   updateDlBtnProgress(id, 0);
-  try {
-    // iOS Safari needs explicit mode:'cors' and no-cache to avoid CORS issues
-    const resp = await fetch(url, {
-      method: 'GET',
-      mode: 'cors',
-      cache: 'no-store',
-      headers: { 'Range': 'bytes=0-' }
-    });
-    if (!resp.ok && resp.status !== 206) throw new Error('HTTP ' + resp.status);
-    const blob = await resp.blob();
-    if (!blob || blob.size < 1000) throw new Error('Empty blob');
-    await saveAudioBlob(id, blob);
-    cachedChapters.add(id);
-    updateDlBtn(id);
-    return true;
-  } catch(e) {
-    // Retry without Range header (some servers don't support it)
+  for (const opts of [
+    { mode: 'cors', cache: 'no-store' },
+    { mode: 'no-cors', cache: 'no-store' },
+    {}
+  ]) {
     try {
-      const resp2 = await fetch(url, { mode: 'cors', cache: 'no-store' });
-      if (!resp2.ok) throw new Error('HTTP ' + resp2.status);
-      const blob2 = await resp2.blob();
-      if (!blob2 || blob2.size < 1000) throw new Error('Empty blob');
-      await saveAudioBlob(id, blob2);
-      cachedChapters.add(id);
-      updateDlBtn(id);
-      return true;
-    } catch(e2) {
-      console.error('Download failed ch' + id, e2);
-      updateDlBtnError(id);
-      return false;
-    }
+      const resp = await fetch(url, opts);
+      const blob = resp.type === 'opaque' ? await resp.blob() :
+                   resp.ok ? await resp.blob() : null;
+      if (blob && blob.size > 10000) {
+        await saveAudioBlob(id, blob);
+        cachedChapters.add(id);
+        updateDlBtn(id);
+        return true;
+      }
+    } catch(e) {}
   }
+  updateDlBtnError(id);
+  return false;
 }
 
 // Get blob:// URL if cached, otherwise stream directly
 async function getPlaybackUrl(id) {
   try {
     const blob = await getAudioBlob(id);
-    if (blob && blob.size > 1000) {
-      // iOS Safari requires audio/mpeg type explicitly
+    if (blob && blob.size > 10000) {
       const typedBlob = new Blob([blob], { type: 'audio/mpeg' });
       return URL.createObjectURL(typedBlob);
     }
