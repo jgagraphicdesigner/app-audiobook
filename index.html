@@ -668,7 +668,7 @@ function nextChapter(){
   if(idx >= 0 && idx < chapters.length - 1) playChapter(chapters[idx + 1]);
 }
 
-
+function togglePlay(){
   if(!currentChapter||!audioMap[currentChapter.id]) return;
   if(playing){audioEl.pause();}else{audioEl.play();}
   playing = !playing;
