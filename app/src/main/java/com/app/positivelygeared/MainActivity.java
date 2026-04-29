@@ -26,23 +26,33 @@ public class MainActivity extends AppCompatActivity {
 
     private WebView webView;
     private ProgressBar progressBar;
-    private static final int NOTIF_PERMISSION_CODE = 100;
-
+    private static final int NOTIF_PERM = 100;
     private static final String PREF_CHAPTER  = "last_chapter";
     private static final String PREF_POSITION = "last_position";
 
-    // Receives play/pause/next/prev from notification buttons → forwards to WebView
-    private BroadcastReceiver controlReceiver = new BroadcastReceiver() {
+    // Receives control actions from notification buttons → sends to WebView JS
+    private final BroadcastReceiver controlReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context ctx, Intent intent) {
+            if (webView == null) return;
             String action = intent.getStringExtra("action");
-            if (action == null || webView == null) return;
+            if (action == null) return;
             runOnUiThread(() -> {
                 switch (action) {
-                    case "play":  webView.evaluateJavascript("if(window.playing===false)togglePlay();", null); break;
-                    case "pause": webView.evaluateJavascript("if(window.playing===true)togglePlay();", null); break;
-                    case "next":  webView.evaluateJavascript("nextChapter();", null); break;
-                    case "prev":  webView.evaluateJavascript("prevChapter();", null); break;
+                    case "play":
+                        webView.evaluateJavascript(
+                            "(function(){ if(!window.playing){ togglePlay(); } })()", null);
+                        break;
+                    case "pause":
+                        webView.evaluateJavascript(
+                            "(function(){ if(window.playing){ togglePlay(); } })()", null);
+                        break;
+                    case "next":
+                        webView.evaluateJavascript("nextChapter();", null);
+                        break;
+                    case "prev":
+                        webView.evaluateJavascript("prevChapter();", null);
+                        break;
                 }
             });
         }
@@ -54,25 +64,22 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         progressBar = findViewById(R.id.progressBar);
         webView     = findViewById(R.id.webView);
-
         setupWebView();
-        requestNotificationPermission();
-        registerControlReceiver();
+        requestNotifPermission();
+        registerReceiver();
     }
 
-    private void requestNotificationPermission() {
-        // Android 13+ requires explicit notification permission
+    private void requestNotifPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
-                    != PackageManager.PERMISSION_GRANTED) {
+            if (ContextCompat.checkSelfPermission(this,
+                    Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
                 ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.POST_NOTIFICATIONS},
-                    NOTIF_PERMISSION_CODE);
+                    new String[]{Manifest.permission.POST_NOTIFICATIONS}, NOTIF_PERM);
             }
         }
     }
 
-    private void registerControlReceiver() {
+    private void registerReceiver() {
         IntentFilter filter = new IntentFilter("pg.WEBVIEW_CONTROL");
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             registerReceiver(controlReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
@@ -128,14 +135,13 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public class Bridge {
-
+        // Called by JS when chapter starts playing or pauses
         @JavascriptInterface
         public void updatePlaybackState(String chapterTitle, String chapterNum, boolean isPlaying) {
             runOnUiThread(() -> {
-                // Start foreground service with media notification
                 Intent i = new Intent(MainActivity.this, MediaPlayerService.class);
-                i.putExtra(MediaPlayerService.EXTRA_TITLE,   "Positively Geared Audiobook");
                 i.putExtra(MediaPlayerService.EXTRA_CHAPTER, chapterNum + ": " + chapterTitle);
+                i.putExtra(MediaPlayerService.EXTRA_TITLE,   "Positively Geared Audiobook");
                 i.putExtra(MediaPlayerService.EXTRA_PLAYING, isPlaying);
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     startForegroundService(i);
@@ -155,13 +161,6 @@ public class MainActivity extends AppCompatActivity {
         public void clearPlaybackPosition() {
             getSharedPreferences("prefs", MODE_PRIVATE).edit()
                 .remove(PREF_CHAPTER).remove(PREF_POSITION).apply();
-        }
-
-        @JavascriptInterface
-        public String getResumeState() {
-            android.content.SharedPreferences p = getSharedPreferences("prefs", MODE_PRIVATE);
-            return "{\"chapter\":" + p.getInt(PREF_CHAPTER,-1) +
-                   ",\"position\":" + p.getInt(PREF_POSITION,0) + "}";
         }
     }
 
