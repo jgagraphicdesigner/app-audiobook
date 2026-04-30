@@ -172,6 +172,7 @@ footer{background:var(--purple-mid);border-top:1px solid var(--border);padding:2
 
   /* Hero — stack vertically */
   .hero{grid-template-columns:1fr !important;padding:2rem 1.2rem 1.8rem;gap:1.5rem}
+  #app-download-btns{grid-template-columns:1fr 1fr !important;max-width:100% !important}
   .hero-book{display:flex;justify-content:center}
   .hero-book img{width:220px !important}
   .hero h1{font-size:2rem}
@@ -271,7 +272,7 @@ footer{background:var(--purple-mid);border-top:1px solid var(--border);padding:2
       </div>
 
       <!-- App Download Buttons — hidden inside APK -->
-      <div id="app-download-btns" style="margin-top:1.2rem;display:flex;align-items:center;gap:0.8rem;flex-wrap:wrap">
+      <div id="app-download-btns" style="margin-top:1.4rem;display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:0.6rem;max-width:520px">
 
         <!-- Android APK -->
         <a href="https://github.com/jgagraphicdesigner/app-audiobook/releases/latest/download/PositivelyGeared.apk"
