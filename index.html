@@ -298,6 +298,30 @@ footer{background:var(--purple-mid);border-top:1px solid var(--border);padding:2
           </div>
         </button>
 
+        <!-- Windows PC -->
+        <button onclick="document.getElementById('windows-popup').style.display='flex'"
+           style="display:inline-flex;align-items:center;gap:0.7rem;background:#1a1a1a;border:1.5px solid #00adef;border-radius:10px;padding:0.6rem 1.2rem;cursor:pointer;transition:all 0.2s;font-family:'Lato',sans-serif"
+           onmouseover="this.style.background='#0a1a2a'"
+           onmouseout="this.style.background='#1a1a1a'">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="#00adef"><path d="M3 12V6.75l6-1.32v6.57H3zm17 0V5.25L11 3.75V12h9zm0 1H11v6.75l9-1.5V13zm-17 0v5.25l6-1.07V13H3z"/></svg>
+          <div>
+            <div style="font-size:0.62rem;color:#00adef;line-height:1;letter-spacing:0.05em;text-transform:uppercase">Install on</div>
+            <div style="font-size:0.9rem;font-weight:700;color:#fff;line-height:1.3">Windows PC</div>
+          </div>
+        </button>
+
+        <!-- MacBook -->
+        <button onclick="document.getElementById('mac-popup').style.display='flex'"
+           style="display:inline-flex;align-items:center;gap:0.7rem;background:#1a1a1a;border:1.5px solid #a8a8a8;border-radius:10px;padding:0.6rem 1.2rem;cursor:pointer;transition:all 0.2s;font-family:'Lato',sans-serif"
+           onmouseover="this.style.background='#1a1a1a'"
+           onmouseout="this.style.background='#1a1a1a'">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="#a8a8a8"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+          <div>
+            <div style="font-size:0.62rem;color:#a8a8a8;line-height:1;letter-spacing:0.05em;text-transform:uppercase">Install on</div>
+            <div style="font-size:0.9rem;font-weight:700;color:#fff;line-height:1.3">MacBook / Mac</div>
+          </div>
+        </button>
+
       </div>
 
       <!-- iOS Install Popup -->
@@ -326,6 +350,85 @@ footer{background:var(--purple-mid);border-top:1px solid var(--border);padding:2
           </div>
           <div style="margin-top:1.3rem;background:rgba(249,199,79,0.08);border:1px solid rgba(249,199,79,0.2);border-radius:8px;padding:0.7rem 0.9rem;font-size:0.75rem;color:var(--gold)">
             💡 Must be opened in <strong>Safari</strong> — Chrome on iPhone doesn't support Add to Home Screen
+          </div>
+        </div>
+      </div>
+
+      <!-- Windows Install Popup -->
+      <div id="windows-popup" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9999;align-items:center;justify-content:center;padding:1.5rem">
+        <div style="background:#0a1628;border:1px solid #00adef;border-radius:16px;padding:1.8rem;max-width:360px;width:100%;position:relative">
+          <button onclick="document.getElementById('windows-popup').style.display='none'" style="position:absolute;top:1rem;right:1rem;background:none;border:none;color:var(--text-muted);font-size:1.3rem;cursor:pointer;line-height:1">✕</button>
+          <div style="font-size:1.05rem;font-weight:700;color:var(--white);margin-bottom:0.3rem">🪟 Install on Windows PC</div>
+          <div style="font-size:0.76rem;color:var(--text-muted);margin-bottom:1.4rem">Free · No download needed · Works offline</div>
+
+          <!-- Chrome tab -->
+          <div style="margin-bottom:1rem">
+            <div style="font-size:0.7rem;font-weight:700;color:#00adef;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:0.7rem">Using Chrome or Edge</div>
+            <div style="display:flex;flex-direction:column;gap:0.7rem">
+              <div style="display:flex;gap:0.8rem;align-items:center">
+                <span style="width:26px;height:26px;border-radius:50%;background:#00adef;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.75rem;flex-shrink:0">1</span>
+                <div style="font-size:0.83rem;color:var(--text-body)">Open this site in <strong style="color:#00adef">Chrome or Edge</strong> on your PC</div>
+              </div>
+              <div style="display:flex;gap:0.8rem;align-items:center">
+                <span style="width:26px;height:26px;border-radius:50%;background:#00adef;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.75rem;flex-shrink:0">2</span>
+                <div style="font-size:0.83rem;color:var(--text-body)">Click the <strong style="color:#00adef">install icon ⊕</strong> in the address bar (right side)</div>
+              </div>
+              <div style="display:flex;gap:0.8rem;align-items:center">
+                <span style="width:26px;height:26px;border-radius:50%;background:#00adef;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.75rem;flex-shrink:0">3</span>
+                <div style="font-size:0.83rem;color:var(--text-body)">Click <strong style="color:#00adef">"Install"</strong> — app opens like a desktop program 🎉</div>
+              </div>
+            </div>
+          </div>
+
+          <div style="background:rgba(0,173,239,0.08);border:1px solid rgba(0,173,239,0.2);border-radius:8px;padding:0.7rem 0.9rem;font-size:0.75rem;color:#00adef">
+            💡 Don't see the install icon? Click the <strong>⋮ menu</strong> → <strong>"Cast, save and share"</strong> → <strong>"Install page as app"</strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mac Install Popup -->
+      <div id="mac-popup" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9999;align-items:center;justify-content:center;padding:1.5rem">
+        <div style="background:#1a1a1a;border:1px solid #a8a8a8;border-radius:16px;padding:1.8rem;max-width:360px;width:100%;position:relative">
+          <button onclick="document.getElementById('mac-popup').style.display='none'" style="position:absolute;top:1rem;right:1rem;background:none;border:none;color:var(--text-muted);font-size:1.3rem;cursor:pointer;line-height:1">✕</button>
+          <div style="font-size:1.05rem;font-weight:700;color:var(--white);margin-bottom:0.3rem"> Install on MacBook / Mac</div>
+          <div style="font-size:0.76rem;color:var(--text-muted);margin-bottom:1.4rem">Free · No download needed · Works offline</div>
+
+          <!-- Chrome on Mac -->
+          <div style="margin-bottom:1.2rem">
+            <div style="font-size:0.7rem;font-weight:700;color:#a8a8a8;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:0.7rem">Using Chrome</div>
+            <div style="display:flex;flex-direction:column;gap:0.7rem">
+              <div style="display:flex;gap:0.8rem;align-items:center">
+                <span style="width:26px;height:26px;border-radius:50%;background:#a8a8a8;color:#1a1a1a;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.75rem;flex-shrink:0">1</span>
+                <div style="font-size:0.83rem;color:var(--text-body)">Open this site in <strong style="color:#ddd">Chrome</strong> on your Mac</div>
+              </div>
+              <div style="display:flex;gap:0.8rem;align-items:center">
+                <span style="width:26px;height:26px;border-radius:50%;background:#a8a8a8;color:#1a1a1a;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.75rem;flex-shrink:0">2</span>
+                <div style="font-size:0.83rem;color:var(--text-body)">Click the <strong style="color:#ddd">⊕ install icon</strong> in the address bar</div>
+              </div>
+              <div style="display:flex;gap:0.8rem;align-items:center">
+                <span style="width:26px;height:26px;border-radius:50%;background:#a8a8a8;color:#1a1a1a;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.75rem;flex-shrink:0">3</span>
+                <div style="font-size:0.83rem;color:var(--text-body)">Click <strong style="color:#ddd">"Install"</strong> — app appears in your Dock 🎉</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Safari on Mac -->
+          <div>
+            <div style="font-size:0.7rem;font-weight:700;color:#a8a8a8;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:0.7rem">Using Safari</div>
+            <div style="display:flex;flex-direction:column;gap:0.7rem">
+              <div style="display:flex;gap:0.8rem;align-items:center">
+                <span style="width:26px;height:26px;border-radius:50%;background:#a8a8a8;color:#1a1a1a;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.75rem;flex-shrink:0">1</span>
+                <div style="font-size:0.83rem;color:var(--text-body)">Open this site in <strong style="color:#ddd">Safari</strong></div>
+              </div>
+              <div style="display:flex;gap:0.8rem;align-items:center">
+                <span style="width:26px;height:26px;border-radius:50%;background:#a8a8a8;color:#1a1a1a;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.75rem;flex-shrink:0">2</span>
+                <div style="font-size:0.83rem;color:var(--text-body)">Click <strong style="color:#ddd">File</strong> menu → <strong style="color:#ddd">"Add to Dock"</strong></div>
+              </div>
+              <div style="display:flex;gap:0.8rem;align-items:center">
+                <span style="width:26px;height:26px;border-radius:50%;background:#a8a8a8;color:#1a1a1a;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.75rem;flex-shrink:0">3</span>
+                <div style="font-size:0.83rem;color:var(--text-body)">Click <strong style="color:#ddd">"Add"</strong> — app appears in your Dock 🎉</div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -711,6 +814,26 @@ async function getPlaybackUrl(id) {
   }
   return audioMap[id]; // fallback to streaming
 }
+
+// PWA install prompt for Chrome/Edge on Windows and Mac
+let desktopInstallPrompt = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  desktopInstallPrompt = e;
+  // Highlight the Windows button to signal it can install natively
+  const winBtn = document.querySelector('[onclick*="windows-popup"]');
+  if (winBtn && !isAPK) {
+    winBtn.style.borderColor = '#f9c74f';
+    winBtn.title = 'Click to install as desktop app';
+    winBtn.onclick = function() {
+      desktopInstallPrompt.prompt();
+      desktopInstallPrompt.userChoice.then(() => {
+        desktopInstallPrompt = null;
+        winBtn.style.borderColor = '#00adef';
+      });
+    };
+  }
+});
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('./sw.js').catch(() => {});
